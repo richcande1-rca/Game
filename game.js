@@ -1,11 +1,19 @@
-/* Gothic Chronicle — deterministic engine + GPT overlay (safe).
+/* Gothic Chronicle — deterministic engine + overlays + images
    - Deterministic world: rooms/items/flags are truth
-   - GPT Overlay: can only "paint" scene + choice text for legal intent IDs
+   - Overlay layer:
+        * AUTO overlay (default): generates gothic narration + choice text every render
+        * Manual GPT overlay button: paste JSON to override (one turn only)
+   - Images:
+        * Auto room illustration via a public image URL (easy prototype)
    - Save: localStorage
 */
 
-const SAVE_KEY = "gothicChronicle.save.v1";
+const SAVE_KEY    = "gothicChronicle.save.v1";
 const OVERLAY_KEY = "gothicChronicle.overlay.v1";
+
+// Toggle these anytime
+const AUTO_NARRATOR = true;   // auto gothic overlay each turn
+const AUTO_IMAGES   = true;   // show auto illustration per room
 
 /* ---------------------------
    WORLD DATA (deterministic)
@@ -17,7 +25,7 @@ const WORLD = {
       descSeed: "A rusted iron gate stands between you and the estate. Fog coils like breath in winter.",
       exits: {
         north: { to: "courtyard", requiresFlag: "gate_unlocked" },
-        east: { to: "wallpath" }
+        east:  { to: "wallpath" }
       },
       items: ["old_note"],
       tags: ["outdoors", "fog", "threshold"],
@@ -66,7 +74,7 @@ const WORLD = {
       descSeed: "A grand foyer stripped of warmth. Portraits stare with eyes too certain. The staircase ascends into shadow.",
       exits: {
         south: { to: "courtyard" },
-        east: { to: "library", requiresFlag: "candle_lit" }
+        east:  { to: "library", requiresFlag: "candle_lit" }
       },
       items: ["candle"],
       tags: ["indoors", "portraits", "echo"],
@@ -123,7 +131,10 @@ function defaultState() {
 }
 
 let STATE = loadState();
-let OVERLAY = loadOverlay(); // {sceneText?:string, choices?:[{id,text}], ts?:number}
+
+// Overlay object shape:
+// { sceneText?: string|null, choices?: [{id:string,text:string}], ts?: number, manual?: boolean }
+let OVERLAY = loadOverlay();
 
 function loadState() {
   try {
@@ -166,27 +177,18 @@ function clearOverlay() {
 /* ---------------------------
    HELPERS
 ---------------------------- */
-function room() {
-  return WORLD.rooms[STATE.roomId];
-}
-function hasItem(itemId) {
-  return STATE.inventory.includes(itemId);
-}
-function hasFlag(flag) {
-  return !!STATE.flags[flag];
-}
-function setFlag(flag, val = true) {
-  STATE.flags[flag] = !!val;
-}
+function room() { return WORLD.rooms[STATE.roomId]; }
+function hasItem(itemId) { return STATE.inventory.includes(itemId); }
+function hasFlag(flag) { return !!STATE.flags[flag]; }
+function setFlag(flag, val = true) { STATE.flags[flag] = !!val; }
+
 function addChron(entry) {
   STATE.chronicle.push(entry);
-  if (STATE.chronicle.length > 400) STATE.chronicle.shift();
+  if (STATE.chronicle.length > 500) STATE.chronicle.shift();
 }
 
 /* ---------------------------
-   UI DRAWER (optional panel)
-   Requires elements from your index.html:
-   - #drawer, #drawerTitle, #drawerBody
+   UI DRAWER
 ---------------------------- */
 function showDrawer(title, body) {
   const drawer = document.getElementById("drawer");
@@ -208,8 +210,6 @@ function hideDrawer() {
 
 /* ---------------------------
    INTENTS (legal move set)
-   IDs match your console output style:
-   MOVE_south, INVENTORY, WAIT, etc.
 ---------------------------- */
 function getLegalIntents() {
   const r = room();
@@ -226,7 +226,7 @@ function getLegalIntents() {
     intents.push({ id: `TAKE_${it}`, type: "take", itemId: it });
   }
 
-  // Special: unlock service door (if present)
+  // Unlock service door
   if (STATE.roomId === "servicedoor") {
     const lock = r.lock;
     if (lock && !hasFlag(lock.flagToSet)) {
@@ -235,7 +235,7 @@ function getLegalIntents() {
     }
   }
 
-  // Special: light candle if have matchbook + candle (in room or inventory) and not lit
+  // Light candle
   const hasCandleVisibleOrHeld = (r.items || []).includes("candle") || hasItem("candle");
   if (hasItem("matchbook") && hasCandleVisibleOrHeld && !hasFlag("candle_lit")) {
     intents.push({ id: "LIGHT_candle", type: "use", action: "light_candle" });
@@ -249,9 +249,9 @@ function getLegalIntents() {
 }
 
 /* ---------------------------
-   NARRATION (baseline)
+   BASE NARRATION (deterministic-ish flavor)
 ---------------------------- */
-function narrateScene() {
+function narrateSceneBase() {
   const r = room();
   const visitedCount = STATE.visited[STATE.roomId] || 0;
   let text = r.descSeed;
@@ -265,11 +265,10 @@ function narrateScene() {
   if (visitedCount > 1) {
     text += " The place feels familiar now, which is its own kind of wrong.";
   }
-
   return text;
 }
 
-function prettyChoice(intent) {
+function prettyChoiceBase(intent) {
   if (intent.type === "move") {
     const toName = WORLD.rooms[intent.to]?.name || intent.to;
     return `Go ${intent.dir} toward ${toName}.`;
@@ -287,6 +286,187 @@ function prettyChoice(intent) {
 }
 
 /* ---------------------------
+   AUTO NARRATOR (local “GPT-like” overlay)
+   This is the “GO” mode: it rewrites scene + choices every render.
+---------------------------- */
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function buildAutoOverlay(intents) {
+  const r = room();
+  const visible = (r.items || []).map(id => WORLD.items[id]?.name || id);
+  const invCount = STATE.inventory.length;
+
+  const openers = [
+    `In ${r.name}, the air sits heavy as velvet.`,
+    `You linger in ${r.name}. The quiet here is not empty.`,
+    `${r.name} receives you without welcome.`,
+    `Within ${r.name}, even your breath sounds like a confession.`
+  ];
+
+  const addVisible = visible.length
+    ? pick([
+        `Something catches your eye: ${visible.join(", ")}.`,
+        `You notice ${visible.join(", ")}—as if placed for you.`,
+        `Among the gloom: ${visible.join(", ")}.`
+      ])
+    : pick([
+        "Nothing obvious offers itself—only the shape of absence.",
+        "No clear object calls to you; the place keeps its secrets.",
+        "There is little to take, and too much to imagine."
+      ]);
+
+  const addInv = invCount
+    ? pick([
+        `Your pockets feel heavier with memory.`,
+        `You carry proof that the world is real.`,
+        `You are not empty-handed, though it may not matter.`
+      ])
+    : pick([
+        `You are nearly unarmed—except for stubbornness.`,
+        `You carry nothing but nerve and questions.`,
+        `Your hands are empty, and the house knows it.`
+      ]);
+
+  const tags = new Set(r.tags || []);
+  const addMood =
+    tags.has("fog") ? "Fog presses close, eager to be mistaken for a hand." :
+    tags.has("moonlight") ? "Moonlight sketches sharp truths across broken stone." :
+    tags.has("books") ? "Dust and paper conspire to make time feel trapped." :
+    tags.has("lock") ? "The lock looks older than the door, and more certain." :
+    "The shadows arrange themselves like an audience.";
+
+  const sceneText = [pick(openers), addMood, addVisible, addInv].join(" ");
+
+  // Rewrite choice text in a gothic register (but tied to exact IDs)
+  const choiceRewrites = intents.map(intent => ({
+    id: intent.id,
+    text: gothicChoiceText(intent)
+  }));
+
+  return { sceneText, choices: choiceRewrites, ts: Date.now(), manual: false };
+}
+
+function gothicChoiceText(intent) {
+  // Movement gothic variations
+  if (intent.type === "move") {
+    const toName = WORLD.rooms[intent.to]?.name || intent.to;
+    const dir = intent.dir.toLowerCase();
+
+    const map = {
+      north: [
+        `Press north into ${toName}.`,
+        `Go north—into ${toName}, where the air feels thinner.`,
+        `Step north toward ${toName}, and do not look back.`
+      ],
+      south: [
+        `Withdraw south toward ${toName}.`,
+        `Retreat south to ${toName}, unwillingly.`,
+        `Back away south toward ${toName}, eyes still searching.`
+      ],
+      east: [
+        `Slip east toward ${toName}.`,
+        `Go east to ${toName}, keeping close to the wall.`,
+        `Move east into ${toName}, as quietly as you can manage.`
+      ],
+      west: [
+        `Head west toward ${toName}.`,
+        `Go west to ${toName}, the shadows following.`,
+        `Step west to ${toName}, listening as you go.`
+      ]
+    };
+
+    return pick(map[dir] || [`Go ${dir} to ${toName}.`]);
+  }
+
+  if (intent.type === "take") {
+    const nm = WORLD.items[intent.itemId]?.name || intent.itemId;
+    return pick([
+      `Take the ${nm.toLowerCase()}.`,
+      `Pocket the ${nm.toLowerCase()} before the house notices.`,
+      `Lift the ${nm.toLowerCase()}—carefully.`
+    ]);
+  }
+
+  if (intent.id === "UNLOCK_service") return pick([
+    "Turn the brass key—slowly—until the lock gives in.",
+    "Try the brass key in the lock, and listen for the click.",
+    "Offer the brass key to the door and see if it accepts you."
+  ]);
+
+  if (intent.id === "RATTLE_lock") return pick([
+    "Test the lock with a careful hand.",
+    "Touch the lock—just enough to learn its mood.",
+    "Rattle the handle softly, as if asking permission."
+  ]);
+
+  if (intent.id === "LIGHT_candle") return pick([
+    "Strike a match and wake the candle’s thin flame.",
+    "Light the candle. Give the dark a name.",
+    "Bring fire to the wick and watch the shadows confess."
+  ]);
+
+  if (intent.type === "inventory") return pick([
+    "Check your belongings—confirm what is real.",
+    "Search your pockets for anything that defies this place.",
+    "Take stock of what you carry, and what it costs."
+  ]);
+
+  if (intent.type === "wait") return pick([
+    "Wait… and listen.",
+    "Hold still. Let the silence speak first.",
+    "Pause a moment—watching, breathing, counting heartbeats."
+  ]);
+
+  return prettyChoiceBase(intent);
+}
+
+/* ---------------------------
+   IMAGE SYSTEM (prototype)
+   Uses a public image URL generator. Great for quick results.
+---------------------------- */
+function ensureSceneImageElement() {
+  const sceneEl = document.getElementById("scene");
+  if (!sceneEl) return null;
+
+  let img = document.getElementById("sceneImage");
+  if (!img) {
+    img = document.createElement("img");
+    img.id = "sceneImage";
+    img.alt = "Scene illustration";
+    img.loading = "lazy";
+    img.style.width = "100%";
+    img.style.borderRadius = "12px";
+    img.style.marginBottom = "12px";
+    img.style.border = "1px solid #1e1e1e";
+    img.style.boxShadow = "0 8px 20px rgba(0,0,0,0.35)";
+    sceneEl.parentNode.insertBefore(img, sceneEl);
+  }
+  return img;
+}
+
+// A stable image per room (so it feels like “book illustrations” for locations)
+function imageUrlForRoom(roomId) {
+  const r = WORLD.rooms[roomId];
+  const style =
+    "Victorian gothic engraving, ink etching, chiaroscuro, 19th-century book illustration, dark fantasy, moody shadows, subtle fog, no text, no modern objects";
+
+  // Add a little room-specific prompt detail:
+  const extra =
+    (r.tags || []).includes("fog") ? "heavy fog, ironwork, wet stone" :
+    (r.tags || []).includes("moonlight") ? "moonlit courtyard, broken statues, cracked fountain" :
+    (r.tags || []).includes("books") ? "towering bookshelves, dust, lectern, candlelight" :
+    (r.tags || []).includes("lock") ? "close-up of old lock, scratched door, dread atmosphere" :
+    (r.tags || []).includes("portraits") ? "grand foyer, portraits, staircase into darkness" :
+    "old stone corridors, shadowy corners";
+
+  const prompt = `${r.name}, ${extra}, ${style}`;
+
+  // Pollinations image endpoint (simple prototype):
+  // We use a stable seed per roomId so it doesn't change every refresh.
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?seed=${encodeURIComponent(roomId)}&nologo=true`;
+}
+
+/* ---------------------------
    IMAGE TRIGGER (for later AHK)
 ---------------------------- */
 function emitImageTrigger(subject, beat) {
@@ -301,13 +481,7 @@ constraints: no modern objects, no neon, no text, moody shadows, subtle fog
 }
 
 /* ---------------------------
-   GPT OVERLAY APPLY
-   Overlay JSON format:
-   {
-     "sceneText": "optional string",
-     "choices": [{"id":"MOVE_south","text":"..."}]
-   }
-   Only keeps choices with IDs that are legal RIGHT NOW.
+   GPT OVERLAY APPLY (manual paste)
 ---------------------------- */
 function getOverlayChoiceText(intentId) {
   if (!OVERLAY?.choices?.length) return null;
@@ -333,7 +507,7 @@ function applyOverlayFromJsonText(jsonText) {
     .map(c => ({ id: c.id.trim(), text: c.text.trim() }))
     .filter(c => c.id && c.text && legalSet.has(c.id));
 
-  OVERLAY = { sceneText: sceneText || null, choices: filtered, ts: Date.now() };
+  OVERLAY = { sceneText: sceneText || null, choices: filtered, ts: Date.now(), manual: true };
   saveOverlay();
 
   return { accepted: filtered.length, legal: legalSet.size };
@@ -343,7 +517,7 @@ function applyOverlayFromJsonText(jsonText) {
    APPLY INTENT (mechanics)
 ---------------------------- */
 function applyIntent(intent) {
-  // Any player action consumes overlay (it was "for this moment")
+  // Any player action consumes overlay (manual or auto) for “this moment”
   clearOverlay();
 
   // turn + visits
@@ -352,7 +526,7 @@ function applyIntent(intent) {
 
   const r = room();
 
-  // first visit milestone
+  // first visit milestone -> chronicle image trigger
   if (r.firstVisitMilestone && !STATE.milestones[r.firstVisitMilestone]) {
     STATE.milestones[r.firstVisitMilestone] = true;
     emitImageTrigger(r.name, r.descSeed);
@@ -368,7 +542,7 @@ function applyIntent(intent) {
 
   if (intent.type === "take") {
     const itemId = intent.itemId;
-    const here = room(); // (after move? no, same room)
+    const here = room(); // same room
     if ((here.items || []).includes(itemId)) {
       here.items = here.items.filter(x => x !== itemId);
       STATE.inventory.push(itemId);
@@ -443,8 +617,8 @@ function inventoryText() {
    RENDER
 ---------------------------- */
 function render() {
-  const sceneEl = document.getElementById("scene");
-  const metaEl = document.getElementById("meta");
+  const sceneEl   = document.getElementById("scene");
+  const metaEl    = document.getElementById("meta");
   const choicesEl = document.getElementById("choices");
 
   if (!sceneEl || !metaEl || !choicesEl) return;
@@ -452,11 +626,30 @@ function render() {
   const r = room();
   const intents = getLegalIntents();
 
-  // Scene text: overlay if present, else baseline narration
+  // If auto narrator is on:
+  // - If no overlay exists, create one now.
+  // - If overlay exists and it was MANUAL, respect it until the next action consumes it.
+  if (AUTO_NARRATOR) {
+    if (!OVERLAY) {
+      OVERLAY = buildAutoOverlay(intents);
+      saveOverlay();
+    }
+  }
+
+  // Images
+  if (AUTO_IMAGES) {
+    const img = ensureSceneImageElement();
+    if (img) {
+      const newUrl = imageUrlForRoom(STATE.roomId);
+      if (img.src !== newUrl) img.src = newUrl;
+    }
+  }
+
+  // Scene text: overlay if present, else base narration
   sceneEl.textContent =
     (OVERLAY?.sceneText && OVERLAY.sceneText.length)
       ? OVERLAY.sceneText
-      : narrateScene();
+      : narrateSceneBase();
 
   // Meta line
   const visible = (r.items || []).map(id => WORLD.items[id]?.name || id);
@@ -464,16 +657,15 @@ function render() {
     `${r.name} • Turn ${STATE.turn} • ` +
     (visible.length ? `You notice: ${visible.join(", ")}.` : `Nothing obvious presents itself.`);
 
-  // Choices
+  // Choices (overlay text if available)
   choicesEl.innerHTML = "";
-
   for (let i = 0; i < intents.length && i < 9; i++) {
     const intent = intents[i];
     const btn = document.createElement("button");
     btn.className = "choice";
 
     const overlayText = getOverlayChoiceText(intent.id);
-    btn.textContent = `${i + 1}) ${overlayText || prettyChoice(intent)}`;
+    btn.textContent = `${i + 1}) ${overlayText || prettyChoiceBase(intent)}`;
 
     btn.onclick = () => {
       hideDrawer();
@@ -506,7 +698,7 @@ window.addEventListener("keydown", (e) => {
   }
 
   if (e.key.toLowerCase() === "c") {
-    showDrawer("Chronicle", STATE.chronicle.slice(-120).join("\n\n"));
+    showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
   }
 
   if (e.key === "Escape") {
@@ -518,16 +710,16 @@ window.addEventListener("keydown", (e) => {
    BUTTONS (must exist in index.html)
 ---------------------------- */
 function bindButtons() {
-  const btnInv = document.getElementById("btnInv");
-  const btnChron = document.getElementById("btnChron");
-  const btnSave = document.getElementById("btnSave");
-  const btnReset = document.getElementById("btnReset");
+  const btnInv     = document.getElementById("btnInv");
+  const btnChron   = document.getElementById("btnChron");
+  const btnSave    = document.getElementById("btnSave");
+  const btnReset   = document.getElementById("btnReset");
   const btnOverlay = document.getElementById("btnOverlay");
 
   if (btnInv) btnInv.onclick = () => showDrawer("Inventory", inventoryText());
 
   if (btnChron) btnChron.onclick = () =>
-    showDrawer("Chronicle", STATE.chronicle.slice(-120).join("\n\n"));
+    showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
 
   if (btnSave) btnSave.onclick = () => {
     saveState();
@@ -543,7 +735,7 @@ function bindButtons() {
     render();
   };
 
-  // GPT Overlay: paste JSON and apply
+  // Manual GPT Overlay: paste JSON to override for one moment
   if (btnOverlay) btnOverlay.onclick = () => {
     const legalIds = getLegalIntents().map(x => x.id);
 
@@ -557,12 +749,12 @@ function bindButtons() {
       JSON.stringify(template, null, 2)
     );
 
-    if (pasted === null) return; // user cancelled
+    if (pasted === null) return;
     if (!pasted.trim()) return;
 
     try {
       const res = applyOverlayFromJsonText(pasted);
-      addChron(`Overlay applied: accepted ${res.accepted}/${res.legal} choices.`);
+      addChron(`Manual overlay applied: accepted ${res.accepted}/${res.legal} choices.`);
       render();
     } catch (err) {
       alert(err?.message || String(err));
@@ -576,6 +768,5 @@ function bindButtons() {
 bindButtons();
 render();
 
-// Handy for you in console:
+// Handy in console:
 window.getLegalIntents = getLegalIntents;
-
