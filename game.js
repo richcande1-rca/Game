@@ -17,7 +17,7 @@ const AUTO_IMAGES   = true;
 
 // Put your deployed Worker base URL here AFTER you deploy from home, e.g.
 // const CF_IMAGE_BASE = "https://gothic-chronicle-images.yoursubdomain.workers.dev/image";
-const CF_IMAGE_BASE =  "https://orange-mountain-fd73.rich-gothic.workers.dev/image"; // 
+const CF_IMAGE_BASE =  "https://gothic-chronicle-images.rich-gothic.workers.dev/image";// 
 
 /* ---------------------------
    WORLD DATA (deterministic)
