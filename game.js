@@ -437,9 +437,22 @@ function ensureSceneImageElement() {
 }
 
 function imageUrlForRoom(roomId) {
-  if (!CF_IMAGE_BASE) return ""; // not deployed yet
-  const seed = encodeURIComponent(roomId);
-  return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${seed}`;
+  if (!CF_IMAGE_BASE) return "";
+
+  const flags = Object.keys(STATE.flags)
+    .filter(k => STATE.flags[k])
+    .sort()
+    .join(",");
+
+  const miles = Object.keys(STATE.milestones)
+    .filter(k => STATE.milestones[k])
+    .sort()
+    .join(",");
+
+  // deterministic signature — image changes only when real state changes
+  const stateSig = `f:${flags}|m:${miles}`;
+
+  return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${encodeURIComponent(roomId)}&state=${encodeURIComponent(stateSig)}`;
 }
 
 /* ---------------------------
