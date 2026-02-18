@@ -4,7 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Gothic Chronicle (Prototype)</title>
+
+  <!-- PRECONNECT (reduces font flash) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Google font -->
   <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+
   <style>
     :root { color-scheme: dark; }
     body {
@@ -12,6 +19,24 @@
       font-family: ui-serif, Georgia, "Times New Roman", serif;
       line-height: 1.35;
     }
+What this actually does
+Browser begins DNS + TLS connection to Google’s font servers immediately.
+
+When it hits the font stylesheet, the connection is already warm.
+
+Result: much less “normal font → goth font” flash.
+
+Tiny bonus tip (optional but very effective)
+Right now only .opening-title uses UnifrakturCook, so the page initially renders with serif text — which exaggerates the visual swap.
+
+If later you want zero perceptible flash, there’s a slightly more advanced technique (font preload + class toggle), but honestly try this first — most of the time it fixes it enough that nobody notices.
+
+After you push, do a hard refresh (Ctrl+Shift+R) and see if the flicker is reduced 👍.
+
+
+
+
+
     .wrap { max-width: 920px; margin: 0 auto; padding: 18px; }
     header { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
     header h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
