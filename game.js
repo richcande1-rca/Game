@@ -17,7 +17,7 @@ const AUTO_IMAGES   = true;
 
 // Put your deployed Worker base URL here AFTER you deploy from home, e.g.
 // const CF_IMAGE_BASE = "https://gothic-chronicle-images.yoursubdomain.workers.dev/image";
-const CF_IMAGE_BASE =  "https://gothic-chronicle-images.rich-gothic.workers.dev/image";// 
+const CF_IMAGE_BASE = "https://gothic-chronicle-images.rich-gothic.workers.dev/image";
 
 /* ---------------------------
    WORLD DATA (deterministic)
@@ -88,7 +88,10 @@ const WORLD = {
     library: {
       name: "Library",
       descSeed: "Books like tombstones. Dust thick as velvet. In the corner, a lectern waits like an accusation.",
-      exits: { west: { to: "foyer" } },
+      exits: {
+        west: { to: "foyer" },
+        north: { to: "sealedpassage", requiresFlag: "seal_placed" } // <-- deterministic gating (no runtime mutation)
+      },
       items: ["silver_seal"],
       tags: ["indoors", "books", "secrets"],
       firstVisitMilestone: "m_library_first"
@@ -99,7 +102,7 @@ const WORLD = {
     sealedpassage: {
       name: "Sealed Passage",
       descSeed: "Behind the lectern, stone slides with a sigh. A passage breathes out dust that tastes like old prayers.",
-      exits: { west: { to: "library" }, north: { to: "chapel" } },
+      exits: { south: { to: "library" }, north: { to: "chapel" } },
       items: ["diary_page"],
       tags: ["indoors", "stone", "secrets"],
       firstVisitMilestone: "m_sealedpassage_first"
@@ -353,6 +356,11 @@ function getLegalIntents() {
     intents.push({ id: `EXAMINE_INV_${it}`, type: "examine", itemId: it, where: "inv" });
   }
 
+  // Iron Gate: OPEN action (sets gate_unlocked)
+  if (STATE.roomId === "gate" && !hasFlag("gate_unlocked")) {
+    intents.push({ id: "OPEN_gate", type: "misc", action: "open_gate" });
+  }
+
   // Service Door lock behavior
   if (STATE.roomId === "servicedoor") {
     const lock = r.lock;
@@ -377,7 +385,7 @@ function getLegalIntents() {
     intents.push({ id: "LIGHT_candle", type: "use", action: "light_candle" });
   }
 
-  // Library puzzle: placing the silver seal reveals a sealed passage
+  // Library puzzle: placing the silver seal sets seal_placed (which unlocks library north exit deterministically)
   if (STATE.roomId === "library" && hasItem("silver_seal") && !hasFlag("seal_placed")) {
     intents.push({ id: "PLACE_seal", type: "use", action: "place_seal" });
   }
@@ -433,12 +441,15 @@ function prettyChoiceBase(intent) {
     const nm = WORLD.items[intent.itemId]?.name || intent.itemId;
     return `Examine the ${nm}.`;
   }
+
+  if (intent.id === "OPEN_gate") return "Strain the iron gate open.";
   if (intent.id === "UNLOCK_service") return "Use the brass key on the lock.";
   if (intent.id === "RATTLE_lock") return "Test the lock with a careful hand.";
   if (intent.id === "LIGHT_candle") return "Strike a match and light the candle.";
   if (intent.id === "PLACE_seal") return "Place the silver seal upon the lectern.";
   if (intent.id === "UNLOCK_crypt") return "Use the iron key on the chapel’s hidden lock.";
   if (intent.id === "KNEEL_altar") return "Kneel at the altar—just for a moment.";
+
   if (intent.type === "inventory") return "Check inventory.";
   if (intent.type === "wait") return "Wait… and listen.";
   return intent.id;
@@ -561,6 +572,12 @@ function gothicChoiceText(intent) {
       `Hold the ${nm.toLowerCase()} to the light and listen for meaning.`
     ]);
   }
+
+  if (intent.id === "OPEN_gate") return pick([
+    "Grip the iron and force the gate to remember it can move.",
+    "Put your weight into the gate until it yields with a scream of rust.",
+    "Open the gate—slowly—so the fog can’t accuse you of haste."
+  ]);
 
   if (intent.id === "UNLOCK_service") return pick([
     "Turn the brass key—slowly—until the lock gives in.",
@@ -721,16 +738,7 @@ function applyIntent(intent) {
     emitImageTrigger(r.name, r.descSeed);
   }
 
-  // Movement: additionally gate sealedpassage access behind seal_placed
   if (intent.type === "move") {
-    // deterministic gating: library -> sealedpassage requires seal_placed
-    if (intent.to === "sealedpassage" && !hasFlag("seal_placed")) {
-      addChron(`Turn ${STATE.turn}: Tried to reach Sealed Passage, but the stone refused to remember its seams.`);
-      saveState();
-      render();
-      return;
-    }
-
     STATE.roomId = intent.to;
     addChron(`Turn ${STATE.turn}: Moved ${intent.dir.toUpperCase()} to ${WORLD.rooms[intent.to]?.name || intent.to}.`);
     saveState();
@@ -763,17 +771,24 @@ function applyIntent(intent) {
     return;
   }
 
+  if (intent.type === "misc" && intent.action === "open_gate") {
+    setFlag("gate_unlocked", true);
+    addChron(`Turn ${STATE.turn}: The iron gate gives way. The estate accepts the sound.`);
+    emitImageTrigger("Iron Gate Opening", "A rusted iron gate groans open as fog pours through like something alive.");
+    saveState();
+    render();
+    return;
+  }
+
   if (intent.type === "unlock") {
-    // service door unlock
     if (intent.flag === "service_unlocked") {
-      setFlag(intent.flag, true);
+      setFlag("service_unlocked", true);
       addChron(`Turn ${STATE.turn}: Unlocked the service door.`);
       saveState();
       render();
       return;
     }
 
-    // chapel -> crypt unlock
     if (intent.flag === "crypt_unlocked") {
       setFlag("crypt_unlocked", true);
       addChron(`Turn ${STATE.turn}: Unlocked the chapel’s hidden trapdoor.`);
@@ -783,7 +798,6 @@ function applyIntent(intent) {
       return;
     }
 
-    // generic unlock fallback
     setFlag(intent.flag, true);
     addChron(`Turn ${STATE.turn}: Unlocked ${intent.flag}.`);
     saveState();
@@ -866,20 +880,6 @@ function render() {
 
   const r = room();
   const intents = getLegalIntents();
-
-  // If seal placed, library gains a north exit to sealedpassage (deterministic mutation)
-  if (STATE.roomId === "library") {
-    if (hasFlag("seal_placed")) {
-      r.exits = r.exits || {};
-      if (!r.exits.north) r.exits.north = { to: "sealedpassage" };
-    } else {
-      // keep deterministic by removing only the specific injected exit if present
-      if (r.exits && r.exits.north && r.exits.north.to === "sealedpassage") {
-        // don't delete other north exits if you ever add them later
-        delete r.exits.north;
-      }
-    }
-  }
 
   if (AUTO_NARRATOR && !OVERLAY) {
     OVERLAY = buildAutoOverlay(intents);
