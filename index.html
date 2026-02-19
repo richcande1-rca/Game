@@ -14,115 +14,213 @@
 
   <style>
     :root { color-scheme: dark; }
-    body {
-      margin: 0; background: #060606; color: #e7e7e7;
+
+    /* --- Base --- */
+    body{
+      margin:0;
+      background:#060606;
+      color:#e7e7e7;
       font-family: ui-serif, Georgia, "Times New Roman", serif;
-      line-height: 1.35;
+      line-height:1.45;
     }
 
-/* FORCE the generated scene image smaller */
-#sceneImage,
-#scene img {
-  max-width: 420px !important;
-  width: 100% !important;
-  height: auto !important;
-  display: block !important;
-  margin: 0 auto 12px auto !important;
+    /* --- Layout --- */
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 18px; }
+    header{ display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
+    header h1{ margin:0; font-size: 22px; letter-spacing: 0.5px; }
+    header .sub{ color:#b8b8b8; font-size: 13px; }
 
-}
-    
-What this actually does
-Browser begins DNS + TLS connection to Google’s font servers immediately.
-
-When it hits the font stylesheet, the connection is already warm.
-
-Result: much less “normal font → goth font” flash.
-
-Tiny bonus tip (optional but very effective)
-Right now only .opening-title uses UnifrakturCook, so the page initially renders with serif text — which exaggerates the visual swap.
-
-If later you want zero perceptible flash, there’s a slightly more advanced technique (font preload + class toggle), but honestly try this first — most of the time it fixes it enough that nobody notices.
-
-After you push, do a hard refresh (Ctrl+Shift+R) and see if the flicker is reduced 👍.
-
-
-
-
-
-    .wrap { max-width: 920px; margin: 0 auto; padding: 18px; }
-    header { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
-    header h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
-    header .sub { color:#b8b8b8; font-size: 13px; }
-    .panel {
-      margin-top: 14px;
-      background: #0d0d0d; border: 1px solid #1e1e1e;
-      border-radius: 14px; padding: 14px;
+    .panel{
+      margin-top:14px;
+      background:#0d0d0d;
+      border:1px solid #1e1e1e;
+      border-radius:14px;
+      padding:14px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.35);
     }
-    .scene { font-size: 18px; }
-    .meta { color:#bdbdbd; font-size: 13px; margin-top: 10px; }
-    .choices { margin-top: 12px; display: grid; gap: 10px; }
-    button.choice {
+
+    /* --- Hero / Opening --- */
+    .opening-wrap{
+      position: relative;
+      margin-top: 12px;
+    }
+
+    /* center the opening image reliably */
+    .opening-img{
+      width: min(520px, 92vw);
+      display:block;
+      margin: 0 auto 10px auto;
+      border-radius:14px;
+      border:1px solid #1e1e1e;
+      box-shadow:0 8px 20px rgba(0,0,0,0.35);
+      object-fit:cover;
+      object-position:center;
+    }
+
+    .opening-title{
+      position:absolute;
+      left:50%;
+      top:20%;
+      transform: translateX(-50%);
+      font-family: "UnifrakturCook", cursive;
+      font-size: clamp(34px, 6vw, 64px);
+      letter-spacing: 2px;
+      color:#6b0000;
+      text-shadow:
+        0 0 6px rgba(255,255,255,0.15),
+        0 0 14px rgba(0,0,0,0.9),
+        0 3px 10px rgba(0,0,0,0.95),
+        0 0 12px rgba(120,0,0,0.7);
+      pointer-events:none;
+      user-select:none;
+      text-align:center;
+      white-space:nowrap;
+    }
+
+    /* --- Scene image inserted by JS --- */
+    #sceneImage{
+      width: 100%;
+      max-width: 520px;
+      height: auto;
+      display:block;
+      margin: 10px auto 12px auto;
+      border-radius:12px;
+      border:1px solid #1e1e1e;
+      box-shadow:0 8px 20px rgba(0,0,0,0.35);
+    }
+
+    /* --- Text blocks --- */
+    .scene{
+      font-size: 18px;
+      line-height: 1.55;
+      padding-top: 6px;
+    }
+
+    .meta{
+      color:#bdbdbd;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    /* subtle separator */
+    .divider{
+      height:1px;
+      background: linear-gradient(to right, transparent, #1e1e1e, transparent);
+      margin: 12px 0 10px 0;
+    }
+
+    /* --- Choices --- */
+    .choices{
+      margin-top: 12px;
+      display:grid;
+      gap:10px;
+    }
+
+    button.choice{
       text-align:left;
-      background:#0b0b0b; color:#f0f0f0;
+      background:#0b0b0b;
+      color:#f0f0f0;
       border:1px solid #2a2a2a;
       border-radius: 12px;
-      padding: 10px 12px;
+      padding: 11px 12px;
       cursor:pointer;
-      transition: transform 0.05s ease, border-color 0.1s ease;
+      transition: transform 0.05s ease, border-color 0.1s ease, background 0.1s ease;
     }
-    button.choice:hover { border-color:#444; }
-    button.choice:active { transform: translateY(1px); }
-    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top: 10px;}
-    .tinybtn {
-      background:#111; border:1px solid #2a2a2a; color:#ddd;
-      border-radius: 10px; padding: 8px 10px; cursor:pointer;
+    button.choice:hover{
+      border-color:#444;
+      background:#0d0d0d;
     }
-    .tinybtn:hover { border-color:#444; }
-    .kbd {
+    button.choice:active{ transform: translateY(1px); }
+    button.choice:focus-visible{
+      outline:none;
+      border-color:#6b0000;
+      box-shadow: 0 0 0 3px rgba(107,0,0,0.25);
+    }
+
+    /* --- Toolbar --- */
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top: 12px;
+    }
+
+    .tinybtn{
+      background:#111;
+      border:1px solid #2a2a2a;
+      color:#ddd;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor:pointer;
+      transition: border-color 0.1s ease, background 0.1s ease, transform 0.05s ease;
+    }
+    .tinybtn:hover{ border-color:#444; background:#121212; }
+    .tinybtn:active{ transform: translateY(1px); }
+    .tinybtn:focus-visible{
+      outline:none;
+      border-color:#6b0000;
+      box-shadow: 0 0 0 3px rgba(107,0,0,0.25);
+    }
+
+    .kbd{
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px; color:#cfcfcf;
-      border:1px solid #2a2a2a; border-bottom-color:#444;
-      padding: 1px 6px; border-radius: 8px; background:#0a0a0a;
+      font-size: 12px;
+      color:#cfcfcf;
+      border:1px solid #2a2a2a;
+      border-bottom-color:#444;
+      padding: 1px 6px;
+      border-radius: 8px;
+      background:#0a0a0a;
+      white-space: nowrap;
     }
-    details { margin-top: 12px; }
-    pre {
-      white-space: pre-wrap; word-break: break-word;
-      background:#070707; border:1px solid #1e1e1e;
-      border-radius: 12px; padding: 12px; color:#d6d6d6;
+
+    /* --- Drawer (make it feel like an in-game panel) --- */
+    details#drawer{
+      margin-top: 12px;
+      border: 1px solid #1e1e1e;
+      border-radius: 12px;
+      background:#070707;
+      overflow:hidden;
+    }
+
+    details#drawer > summary{
+      cursor:pointer;
+      padding: 10px 12px;
+      list-style:none;
+      user-select:none;
+      color:#e2e2e2;
+      background:#0a0a0a;
+      border-bottom:1px solid #151515;
+    }
+
+    details#drawer > summary::-webkit-details-marker{ display:none; }
+
+    pre{
+      margin:0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      padding: 12px;
+      color:#d6d6d6;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
     }
-    .opening-wrap {
-  position: relative;
-}
 
-.opening-title {
-  position: absolute;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
+    /* --- Footer note panel --- */
+    .footnote{
+      color:#b8b8b8;
+      font-size: 13px;
+    }
 
-  font-family: "UnifrakturCook", cursive;
-  font-size: 64px;
-  letter-spacing: 2px;
-
-  color: #6b0000; /* deep dark blood red */
-
- text-shadow:
-  0 0 6px rgba(255,255,255,0.15),   /* faint moonlight edge */
-  0 0 14px rgba(0,0,0,0.9),         /* deep separation from background */
-  0 3px 10px rgba(0,0,0,0.95),      /* depth */
-  0 0 12px rgba(120,0,0,0.7);       /* subtle red aura */
-
-  pointer-events: none;
-}
-
-  
-
-
+    /* --- Small screens --- */
+    @media (max-width: 520px){
+      header h1{ font-size: 20px; }
+      .scene{ font-size: 17px; }
+      .panel{ padding: 12px; }
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <header>
@@ -130,42 +228,38 @@ After you push, do a hard refresh (Ctrl+Shift+R) and see if the flicker is reduc
       <div class="sub">Choice-based, non-linear prototype — deterministic world, flavorful narration.</div>
     </header>
 
-   <div class="opening-wrap">
+    <!-- MAIN GAME PANEL -->
+    <div class="panel">
+      <div class="opening-wrap" aria-hidden="true">
+        <img
+          class="opening-img"
+          src="assets/opening.png"
+          alt="Gothic Chronicle Opening"
+        />
+        <div class="opening-title">Gothic Chronicle</div>
+      </div>
 
- <img
-  src="assets/opening.png"
-  alt="Gothic Chronicle Opening"
-  style="
-    width:35%;
-    object-fit:cover;
-    object-position:center;
-    border-radius:14px;
-    margin:0 auto 12px auto;
-    border:1px solid #1e1e1e;
-    box-shadow:0 8px 20px rgba(0,0,0,0.35);
-    display:block;"
-/>
+      <!-- Dynamic scene image will be inserted here by game.js -->
 
+      <div id="scene" class="scene"></div>
+      <div id="meta" class="meta"></div>
 
-  <div class="opening-title">Gothic Chronicle</div>
+      <div class="divider"></div>
 
-
-
-</div>
-  <!-- Dynamic scene image will be inserted here by game.js -->
-
-  <div id="scene" class="scene"></div>
-  <div id="meta" class="meta"></div>
-  <div class="choices" id="choices"></div>
-
+      <div class="choices" id="choices"></div>
 
       <div class="row">
-        <button class="tinybtn" id="btnInv">Inventory</button>
-        <button class="tinybtn" id="btnChron">Chronicle</button>
-        <button class="tinybtn" id="btnOverlay">GPT Overlay</button>
-        <button class="tinybtn" id="btnSave">Force Save</button>
-        <button class="tinybtn" id="btnReset">Hard Reset</button>
-        <span class="sub">Quick keys: <span class="kbd">1-9</span> choose • <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle</span>
+        <button class="tinybtn" id="btnInv" type="button">Inventory</button>
+        <button class="tinybtn" id="btnChron" type="button">Chronicle</button>
+        <button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
+        <button class="tinybtn" id="btnSave" type="button">Force Save</button>
+        <button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
+
+        <span class="sub">
+          Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
+          <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
+          <span class="kbd">Esc</span> close
+        </span>
       </div>
 
       <details id="drawer" style="display:none;">
@@ -175,7 +269,7 @@ After you push, do a hard refresh (Ctrl+Shift+R) and see if the flicker is reduc
     </div>
 
     <div class="panel">
-      <div class="sub">
+      <div class="footnote">
         Hook point for later: when the engine emits an image trigger, it appears in the Chronicle as a block you can have AHK detect and route to an image generator.
       </div>
     </div>
@@ -184,3 +278,4 @@ After you push, do a hard refresh (Ctrl+Shift+R) and see if the flicker is reduc
   <script src="game.js"></script>
 </body>
 </html>
+
