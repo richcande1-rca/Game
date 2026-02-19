@@ -637,21 +637,36 @@ function ensureSceneImageElement() {
   const sceneEl = document.getElementById("scene");
   if (!sceneEl) return null;
 
+  let wrap = document.getElementById("sceneImageFrame");
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "sceneImageFrame";
+    wrap.className = "frame-wrap";
+
+    // corner ornaments
+    const tl = document.createElement("div"); tl.className = "frame-corner tl";
+    const tr = document.createElement("div"); tr.className = "frame-corner tr";
+    const bl = document.createElement("div"); bl.className = "frame-corner bl";
+    const br = document.createElement("div"); br.className = "frame-corner br";
+    wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
+
+    // insert wrapper before scene text
+    sceneEl.parentNode.insertBefore(wrap, sceneEl);
+  }
+
   let img = document.getElementById("sceneImage");
   if (!img) {
     img = document.createElement("img");
     img.id = "sceneImage";
     img.alt = "Scene illustration";
     img.loading = "lazy";
-    img.style.width = "100%";
-    img.style.borderRadius = "12px";
-    img.style.marginBottom = "12px";
-    img.style.border = "1px solid #1e1e1e";
-    img.style.boxShadow = "0 8px 20px rgba(0,0,0,0.35)";
-    img.onerror = () => { img.style.display = "none"; };
-    img.onload  = () => { img.style.display = "block"; };
-    sceneEl.parentNode.insertBefore(img, sceneEl);
+
+    img.onerror = () => { wrap.style.display = "none"; };
+    img.onload  = () => { wrap.style.display = "block"; };
+
+    wrap.appendChild(img);
   }
+
   return img;
 }
 
