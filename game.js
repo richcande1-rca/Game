@@ -92,6 +92,85 @@ const WORLD = {
       items: ["silver_seal"],
       tags: ["indoors", "books", "secrets"],
       firstVisitMilestone: "m_library_first"
+    },
+
+    /* --- NEW ROOMS --- */
+
+    sealedpassage: {
+      name: "Sealed Passage",
+      descSeed: "Behind the lectern, stone slides with a sigh. A passage breathes out dust that tastes like old prayers.",
+      exits: { west: { to: "library" }, north: { to: "chapel" } },
+      items: ["diary_page"],
+      tags: ["indoors", "stone", "secrets"],
+      firstVisitMilestone: "m_sealedpassage_first"
+    },
+
+    chapel: {
+      name: "Chapel",
+      descSeed: "A private chapel, abandoned but not empty. Candles have melted into grotesque stalagmites. The altar is stained dark.",
+      exits: {
+        south: { to: "sealedpassage" },
+        east:  { to: "gallery" },
+        down:  { to: "crypt", requiresFlag: "crypt_unlocked" }
+      },
+      items: ["rosary"],
+      tags: ["indoors", "faith", "cold"],
+      lock: { flagToSet: "crypt_unlocked", keyItem: "iron_key" },
+      firstVisitMilestone: "m_chapel_first"
+    },
+
+    gallery: {
+      name: "Gallery",
+      descSeed: "Frames line the walls like windows into lives that never ended. One portrait’s eyes appear newly wet.",
+      exits: { west: { to: "chapel" }, north: { to: "upperlanding" } },
+      items: ["raven_feather"],
+      tags: ["indoors", "portraits", "echo"],
+      firstVisitMilestone: "m_gallery_first"
+    },
+
+    upperlanding: {
+      name: "Upper Landing",
+      descSeed: "The upper landing creaks like a held breath. Doors wait on both sides, polite as teeth.",
+      exits: { south: { to: "gallery" }, east: { to: "masterbed" }, west: { to: "nursery" } },
+      items: [],
+      tags: ["indoors", "shadow", "quiet"],
+      firstVisitMilestone: "m_upperlanding_first"
+    },
+
+    masterbed: {
+      name: "Master Bedroom",
+      descSeed: "A vast bed draped in ruined finery. The canopy hangs like mourning cloth. The mirror here refuses to feel honest.",
+      exits: { west: { to: "upperlanding" } },
+      items: ["iron_key"],
+      tags: ["indoors", "silk", "wrong"],
+      firstVisitMilestone: "m_masterbed_first"
+    },
+
+    nursery: {
+      name: "Nursery",
+      descSeed: "A nursery with a cradle that rocks in its own time. Toys sit arranged as if expecting applause.",
+      exits: { east: { to: "upperlanding" }, down: { to: "foyer" } },
+      items: ["music_box"],
+      tags: ["indoors", "childhood", "stillness"],
+      firstVisitMilestone: "m_nursery_first"
+    },
+
+    crypt: {
+      name: "Crypt",
+      descSeed: "Stone steps descend into a crypt where names have been scratched out. The air is colder than truth.",
+      exits: { up: { to: "chapel" }, north: { to: "cellar" } },
+      items: ["vial_ash"],
+      tags: ["indoors", "stone", "dead"],
+      firstVisitMilestone: "m_crypt_first"
+    },
+
+    cellar: {
+      name: "Cellar",
+      descSeed: "Casks rot in rows. The floor is damp, the walls sweating. A distant drip keeps time like a metronome for dread.",
+      exits: { south: { to: "crypt" }, west: { to: "kitchen" } },
+      items: ["cold_coins"],
+      tags: ["indoors", "damp", "dark"],
+      firstVisitMilestone: "m_cellar_first"
     }
   },
 
@@ -115,6 +194,43 @@ const WORLD = {
     silver_seal: {
       name: "Silver Seal",
       examine: "A cold silver seal engraved with a crescent and thorned rose. It feels like a boundary."
+    },
+
+    /* --- NEW ITEMS --- */
+    diary_page: {
+      name: "Diary Page",
+      examine:
+        "A torn page, the handwriting tight with panic: “The seal is not a relic—it's a promise. Place it where words are weighed. Do not pray for mercy. Bargain for boundaries.”"
+    },
+    rosary: {
+      name: "Rosary",
+      examine:
+        "Wooden beads darkened by touch. One bead is carved into a tiny thorned rose. It feels warm, as if recently held."
+    },
+    raven_feather: {
+      name: "Raven Feather",
+      examine:
+        "A glossy black feather. It catches the light like oil on water. When you hold it, you can almost hear wings in the walls."
+    },
+    iron_key: {
+      name: "Iron Key",
+      examine:
+        "A heavy iron key, pitted with age. It smells faintly of candle smoke and soil."
+    },
+    music_box: {
+      name: "Music Box",
+      examine:
+        "A small music box shaped like a coffin. The crank resists, then yields—playing a melody you somehow already know."
+    },
+    vial_ash: {
+      name: "Vial of Ash",
+      examine:
+        "A narrow glass vial filled with gray ash. The ash clings to the glass as if it hates falling."
+    },
+    cold_coins: {
+      name: "Cold Coins",
+      examine:
+        "A handful of old coins, too cold for the room. Their faces are worn smooth, as if rubbed by anxious thumbs for decades."
     }
   }
 };
@@ -216,15 +332,28 @@ function getLegalIntents() {
   const r = room();
   const intents = [];
 
+  // movement (only if requirements satisfied)
   for (const [dir, ex] of Object.entries(r.exits || {})) {
     if (ex.requiresFlag && !hasFlag(ex.requiresFlag)) continue;
     intents.push({ id: `MOVE_${dir}`, type: "move", dir, to: ex.to });
   }
 
+  // take items in room
   for (const it of (r.items || [])) {
     intents.push({ id: `TAKE_${it}`, type: "take", itemId: it });
   }
 
+  // EXAMINE items in room (story action)
+  for (const it of (r.items || [])) {
+    intents.push({ id: `EXAMINE_${it}`, type: "examine", itemId: it, where: "room" });
+  }
+
+  // EXAMINE items in inventory (story action)
+  for (const it of (STATE.inventory || [])) {
+    intents.push({ id: `EXAMINE_INV_${it}`, type: "examine", itemId: it, where: "inv" });
+  }
+
+  // Service Door lock behavior
   if (STATE.roomId === "servicedoor") {
     const lock = r.lock;
     if (lock && !hasFlag(lock.flagToSet)) {
@@ -233,9 +362,24 @@ function getLegalIntents() {
     }
   }
 
+  // Chapel trapdoor lock behavior
+  if (STATE.roomId === "chapel") {
+    const lock = r.lock;
+    if (lock && !hasFlag(lock.flagToSet)) {
+      if (hasItem(lock.keyItem)) intents.push({ id: "UNLOCK_crypt", type: "unlock", flag: lock.flagToSet });
+      else intents.push({ id: "KNEEL_altar", type: "misc", action: "kneel_altar" });
+    }
+  }
+
+  // Candle lighting intent (usable if have matchbook + candle visible or held)
   const hasCandleVisibleOrHeld = (r.items || []).includes("candle") || hasItem("candle");
   if (hasItem("matchbook") && hasCandleVisibleOrHeld && !hasFlag("candle_lit")) {
     intents.push({ id: "LIGHT_candle", type: "use", action: "light_candle" });
+  }
+
+  // Library puzzle: placing the silver seal reveals a sealed passage
+  if (STATE.roomId === "library" && hasItem("silver_seal") && !hasFlag("seal_placed")) {
+    intents.push({ id: "PLACE_seal", type: "use", action: "place_seal" });
   }
 
   intents.push({ id: "INVENTORY", type: "inventory" });
@@ -252,15 +396,27 @@ function narrateSceneBase() {
   const visitedCount = STATE.visited[STATE.roomId] || 0;
   let text = r.descSeed;
 
+  // extra mood lines based on state
   if (STATE.roomId === "foyer" && !hasFlag("candle_lit")) {
     text += " The darker corners seem to hold their breath, waiting for you to notice them.";
   }
   if (STATE.roomId === "foyer" && hasFlag("candle_lit")) {
     text += " The candlelight makes the portraits look less alive—and somehow more judgmental.";
   }
+
+  // Library seal puzzle hinting
+  if (STATE.roomId === "library" && !hasFlag("seal_placed") && hasItem("silver_seal")) {
+    text += " The lectern’s surface looks strangely clean—like it expects something to be set upon it.";
+  }
+  if (STATE.roomId === "library" && hasFlag("seal_placed")) {
+    text += " The stone behind the lectern no longer looks like wall. It looks like a decision already made.";
+  }
+
+  // Familiarity sting
   if (visitedCount > 1) {
     text += " The place feels familiar now, which is its own kind of wrong.";
   }
+
   return text;
 }
 
@@ -273,9 +429,16 @@ function prettyChoiceBase(intent) {
     const nm = WORLD.items[intent.itemId]?.name || intent.itemId;
     return `Take the ${nm}.`;
   }
+  if (intent.type === "examine") {
+    const nm = WORLD.items[intent.itemId]?.name || intent.itemId;
+    return `Examine the ${nm}.`;
+  }
   if (intent.id === "UNLOCK_service") return "Use the brass key on the lock.";
   if (intent.id === "RATTLE_lock") return "Test the lock with a careful hand.";
   if (intent.id === "LIGHT_candle") return "Strike a match and light the candle.";
+  if (intent.id === "PLACE_seal") return "Place the silver seal upon the lectern.";
+  if (intent.id === "UNLOCK_crypt") return "Use the iron key on the chapel’s hidden lock.";
+  if (intent.id === "KNEEL_altar") return "Kneel at the altar—just for a moment.";
   if (intent.type === "inventory") return "Check inventory.";
   if (intent.type === "wait") return "Wait… and listen.";
   return intent.id;
@@ -328,6 +491,8 @@ function buildAutoOverlay(intents) {
     tags.has("moonlight") ? "Moonlight sketches sharp truths across broken stone." :
     tags.has("books") ? "Dust and paper conspire to make time feel trapped." :
     tags.has("lock") ? "The lock looks older than the door, and more certain." :
+    tags.has("faith") ? "Old prayers cling to the air like cobwebs with teeth." :
+    tags.has("dead") ? "The cold here is personal, like a name spoken in stone." :
     "The shadows arrange themselves like an audience.";
 
   const sceneText = [pick(openers), addMood, addVisible, addInv].join(" ");
@@ -364,6 +529,16 @@ function gothicChoiceText(intent) {
         `Head west toward ${toName}.`,
         `Go west to ${toName}, the shadows following.`,
         `Step west to ${toName}, listening as you go.`
+      ],
+      up: [
+        `Climb upward toward ${toName}.`,
+        `Go up to ${toName}, letting the house watch you rise.`,
+        `Ascend to ${toName}—each step a decision.`
+      ],
+      down: [
+        `Descend into ${toName}.`,
+        `Go down to ${toName}, where breath turns to doubt.`,
+        `Step down into ${toName}, and feel the cold learn you.`
       ]
     };
     return pick(map[dir] || [`Go ${dir} to ${toName}.`]);
@@ -378,10 +553,25 @@ function gothicChoiceText(intent) {
     ]);
   }
 
+  if (intent.type === "examine") {
+    const nm = WORLD.items[intent.itemId]?.name || intent.itemId;
+    return pick([
+      `Study the ${nm.toLowerCase()} closely.`,
+      `Examine the ${nm.toLowerCase()}—as if it might confess.`,
+      `Hold the ${nm.toLowerCase()} to the light and listen for meaning.`
+    ]);
+  }
+
   if (intent.id === "UNLOCK_service") return pick([
     "Turn the brass key—slowly—until the lock gives in.",
     "Try the brass key in the lock, and listen for the click.",
     "Offer the brass key to the door and see if it accepts you."
+  ]);
+
+  if (intent.id === "UNLOCK_crypt") return pick([
+    "Turn the iron key. Let the chapel reveal what it hides.",
+    "Use the iron key—slowly—until the trapdoor agrees.",
+    "Unlock what faith tried to bury."
   ]);
 
   if (intent.id === "RATTLE_lock") return pick([
@@ -390,10 +580,22 @@ function gothicChoiceText(intent) {
     "Rattle the handle softly, as if asking permission."
   ]);
 
+  if (intent.id === "KNEEL_altar") return pick([
+    "Kneel at the altar and pretend you still believe in safety.",
+    "Lower yourself before the altar—just long enough to regret it.",
+    "Kneel and listen. Sometimes stone remembers names."
+  ]);
+
   if (intent.id === "LIGHT_candle") return pick([
     "Strike a match and wake the candle’s thin flame.",
     "Light the candle. Give the dark a name.",
     "Bring fire to the wick and watch the shadows confess."
+  ]);
+
+  if (intent.id === "PLACE_seal") return pick([
+    "Set the silver seal upon the lectern and see what stirs.",
+    "Place the silver seal where words are weighed.",
+    "Offer the seal to the lectern—boundary for boundary."
   ]);
 
   if (intent.type === "inventory") return pick([
@@ -513,12 +715,22 @@ function applyIntent(intent) {
 
   const r = room();
 
+  // First-visit milestones trigger image prompts (deterministic)
   if (r.firstVisitMilestone && !STATE.milestones[r.firstVisitMilestone]) {
     STATE.milestones[r.firstVisitMilestone] = true;
     emitImageTrigger(r.name, r.descSeed);
   }
 
+  // Movement: additionally gate sealedpassage access behind seal_placed
   if (intent.type === "move") {
+    // deterministic gating: library -> sealedpassage requires seal_placed
+    if (intent.to === "sealedpassage" && !hasFlag("seal_placed")) {
+      addChron(`Turn ${STATE.turn}: Tried to reach Sealed Passage, but the stone refused to remember its seams.`);
+      saveState();
+      render();
+      return;
+    }
+
     STATE.roomId = intent.to;
     addChron(`Turn ${STATE.turn}: Moved ${intent.dir.toUpperCase()} to ${WORLD.rooms[intent.to]?.name || intent.to}.`);
     saveState();
@@ -541,9 +753,39 @@ function applyIntent(intent) {
     return;
   }
 
+  if (intent.type === "examine") {
+    const it = WORLD.items[intent.itemId];
+    const title = it?.name || intent.itemId;
+    const body  = it?.examine || "Nothing more yields itself.";
+    addChron(`Turn ${STATE.turn}: Examined ${title}.`);
+    saveState();
+    showDrawer(title, body);
+    return;
+  }
+
   if (intent.type === "unlock") {
+    // service door unlock
+    if (intent.flag === "service_unlocked") {
+      setFlag(intent.flag, true);
+      addChron(`Turn ${STATE.turn}: Unlocked the service door.`);
+      saveState();
+      render();
+      return;
+    }
+
+    // chapel -> crypt unlock
+    if (intent.flag === "crypt_unlocked") {
+      setFlag("crypt_unlocked", true);
+      addChron(`Turn ${STATE.turn}: Unlocked the chapel’s hidden trapdoor.`);
+      emitImageTrigger("Chapel Trapdoor", "A concealed trapdoor near the altar opens into darkness below, as cold air spills upward.");
+      saveState();
+      render();
+      return;
+    }
+
+    // generic unlock fallback
     setFlag(intent.flag, true);
-    addChron(`Turn ${STATE.turn}: Unlocked the service door.`);
+    addChron(`Turn ${STATE.turn}: Unlocked ${intent.flag}.`);
     saveState();
     render();
     return;
@@ -556,10 +798,26 @@ function applyIntent(intent) {
     return;
   }
 
+  if (intent.type === "misc" && intent.action === "kneel_altar") {
+    addChron(`Turn ${STATE.turn}: You kneel. The altar does not forgive you. Something beneath the boards shifts—once.`);
+    saveState();
+    render();
+    return;
+  }
+
   if (intent.type === "use" && intent.action === "light_candle") {
     setFlag("candle_lit", true);
     addChron(`Turn ${STATE.turn}: Lit the candle.`);
     emitImageTrigger("Candlelight", "A candle flares to life, casting harsh, honest shadows.");
+    saveState();
+    render();
+    return;
+  }
+
+  if (intent.type === "use" && intent.action === "place_seal") {
+    setFlag("seal_placed", true);
+    addChron(`Turn ${STATE.turn}: Placed the Silver Seal on the lectern. Stone answered.`);
+    emitImageTrigger("Sealed Passage", "A silver seal is set upon a lectern; hidden stonework slides aside, revealing a passage.");
     saveState();
     render();
     return;
@@ -608,6 +866,20 @@ function render() {
 
   const r = room();
   const intents = getLegalIntents();
+
+  // If seal placed, library gains a north exit to sealedpassage (deterministic mutation)
+  if (STATE.roomId === "library") {
+    if (hasFlag("seal_placed")) {
+      r.exits = r.exits || {};
+      if (!r.exits.north) r.exits.north = { to: "sealedpassage" };
+    } else {
+      // keep deterministic by removing only the specific injected exit if present
+      if (r.exits && r.exits.north && r.exits.north.to === "sealedpassage") {
+        // don't delete other north exits if you ever add them later
+        delete r.exits.north;
+      }
+    }
+  }
 
   if (AUTO_NARRATOR && !OVERLAY) {
     OVERLAY = buildAutoOverlay(intents);
