@@ -20,13 +20,15 @@
       line-height: 1.35;
     }
 
-  /* Resize generated scene image */
+/* FORCE the generated scene image smaller */
+#sceneImage,
 #scene img {
-  max-width: 420px;
-  width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto 12px auto;
+  max-width: 420px !important;
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  margin: 0 auto 12px auto !important;
+
 }
     
 What this actually does
