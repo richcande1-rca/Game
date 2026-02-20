@@ -286,6 +286,33 @@
       font-size: 12px;
     }
 
+    /* --- Volume slider --- */
+.vol{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding: 6px 10px;
+  border:1px solid #2a2a2a;
+  border-radius: 10px;
+  background:#0a0a0a;
+  color:#bdbdbd;
+}
+
+.vol-label{
+  font-size: 12px;
+  color:#bdbdbd;
+  user-select:none;
+}
+
+.vol input[type="range"]{
+  width: 140px;
+  accent-color: #6b0000; /* subtle blood-red */
+}
+
+@media (max-width: 520px){
+  .vol input[type="range"]{ width: 120px; }
+}
+
     /* --- Footer note panel --- */
     .footnote{
       color:#b8b8b8;
