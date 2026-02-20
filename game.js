@@ -969,6 +969,10 @@ function bindButtons() {
   const btnReset   = document.getElementById("btnReset");
   const btnOverlay = document.getElementById("btnOverlay");
 
+  // NEW: music
+  const btnMusic   = document.getElementById("btnMusic");
+  const bgm        = document.getElementById("bgm");
+
   if (btnInv) btnInv.onclick = () => showDrawer("Inventory", inventoryText());
 
   if (btnChron) btnChron.onclick = () =>
@@ -982,6 +986,14 @@ function bindButtons() {
   if (btnReset) btnReset.onclick = () => {
     localStorage.removeItem(SAVE_KEY);
     localStorage.removeItem(OVERLAY_KEY);
+
+    // also stop music on hard reset (nice behavior)
+    try {
+      if (bgm) { bgm.pause(); bgm.currentTime = 0; }
+      localStorage.removeItem("gothicChronicle.bgm.v1");
+      if (btnMusic) btnMusic.textContent = "Music: Off";
+    } catch {}
+
     STATE = defaultState();
     OVERLAY = null;
     showDrawer("Reset", "Hard reset done. Reloading scene…");
@@ -1011,6 +1023,54 @@ function bindButtons() {
       alert(err?.message || String(err));
     }
   };
+
+  // --- Music toggle (autoplay-safe + remembers preference) ---
+  if (btnMusic && bgm) {
+    const key = "gothicChronicle.bgm.v1";
+    let on = localStorage.getItem(key) === "1";
+
+    function syncLabel() {
+      btnMusic.textContent = on ? "Music: On" : "Music: Off";
+    }
+
+    async function start() {
+      try {
+        bgm.volume = 0.45;
+        bgm.load();
+        await bgm.play();          // click gesture -> should succeed
+        on = true;
+        localStorage.setItem(key, "1");
+        syncLabel();
+      } catch (err) {
+        on = false;
+        localStorage.setItem(key, "0");
+        syncLabel();
+        addChron(`Music failed: ${err?.message || String(err)}`);
+        showDrawer("Music", `Could not start audio:\n${err?.message || String(err)}`);
+      }
+    }
+
+    function stop() {
+      on = false;
+      localStorage.setItem(key, "0");
+      bgm.pause();
+      bgm.currentTime = 0;
+      syncLabel();
+    }
+
+    syncLabel();
+
+    btnMusic.onclick = async () => {
+      if (on) stop();
+      else await start();
+    };
+
+    // If user previously enabled it, start on first user interaction (safe)
+    if (on) {
+      on = false; syncLabel();
+      window.addEventListener("pointerdown", async () => { await start(); }, { once: true });
+    }
+  }
 }
 
 /* ---------------------------
