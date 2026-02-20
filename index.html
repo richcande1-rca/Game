@@ -74,11 +74,19 @@
 .frame-corner.bl{ bottom: 6px; left: 6px; transform: rotate(270deg); }
 .frame-corner.br{ bottom: 6px; right: 6px; transform: rotate(180deg); }
 
-    /* --- Cinematic image fade-in --- */
+   /* --- Cinematic image fade-in + frame image styling --- */
 #sceneImage{
+  display:block;
+  width:100%;
+  height:auto;
+
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.65);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.45);
+  filter: contrast(1.05) saturate(0.95);
+
   opacity: 0;
   transform: scale(0.985);
-  filter: contrast(1.05) saturate(0.95); /* keep your existing vibe */
   transition: opacity 650ms ease, transform 650ms ease;
   will-change: opacity, transform;
 }
@@ -86,17 +94,6 @@
 #sceneImage.is-loaded{
   opacity: 1;
   transform: scale(1);
-}
-
-/* the actual image inside frame */
-#sceneImage{
-  display:block;
-  width:100%;
-  height:auto;
-  border-radius: 10px;
-  border: 1px solid rgba(0,0,0,0.65);
-  box-shadow: 0 10px 22px rgba(0,0,0,0.45);
-  filter: contrast(1.05) saturate(0.95);
 }
 
 /* --- Music button (matches your tinybtn style, but a touch special) --- */
