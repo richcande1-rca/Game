@@ -637,23 +637,20 @@ function ensureSceneImageElement() {
   const sceneEl = document.getElementById("scene");
   if (!sceneEl) return null;
 
-  // Prefer the existing HTML mount point:
-  let wrap = document.getElementById("sceneFrame");
-
-  // If it's not in the HTML for some reason, create it.
+  let wrap = document.getElementById("sceneImageFrame");
   if (!wrap) {
     wrap = document.createElement("div");
-    wrap.id = "sceneFrame";
+    wrap.id = "sceneImageFrame";
     wrap.className = "frame-wrap";
-    wrap.style.display = "none";
 
     // corner ornaments
-    const tl = document.createElement("span"); tl.className = "frame-corner tl";
-    const tr = document.createElement("span"); tr.className = "frame-corner tr";
-    const bl = document.createElement("span"); bl.className = "frame-corner bl";
-    const br = document.createElement("span"); br.className = "frame-corner br";
+    const tl = document.createElement("div"); tl.className = "frame-corner tl";
+    const tr = document.createElement("div"); tr.className = "frame-corner tr";
+    const bl = document.createElement("div"); bl.className = "frame-corner bl";
+    const br = document.createElement("div"); br.className = "frame-corner br";
     wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
 
+    // insert wrapper before scene text
     sceneEl.parentNode.insertBefore(wrap, sceneEl);
   }
 
@@ -663,19 +660,12 @@ function ensureSceneImageElement() {
     img.id = "sceneImage";
     img.alt = "Scene illustration";
     img.loading = "lazy";
+
+    img.onerror = () => { wrap.style.display = "none"; };
+    img.onload  = () => { wrap.style.display = "block"; };
+
     wrap.appendChild(img);
   }
-
-  img.classList.remove("is-loaded");
-
-  img.onerror = () => {
-    wrap.style.display = "none";
-  };
-
-  img.onload = () => {
-    wrap.style.display = "block";
-    requestAnimationFrame(() => img.classList.add("is-loaded"));
-  };
 
   return img;
 }
@@ -1043,15 +1033,15 @@ function bindButtons() {
     const KEY_VOL = "gothicChronicle.bgmVol.v1";
 
     // preference
-    const prefOn = localStorage.getItem(KEY_ON) === "1";
+    let prefOn = localStorage.getItem(KEY_ON) === "1";
 
     // load volume
     const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
     const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
-
-    if (bgmVol) bgmVol.value = String(volPct);
     bgm.volume = volPct / 100;
+    if (bgmVol) bgmVol.value = String(volPct);
 
+    // actual playing state
     let playing = false;
 
     function syncLabel() {
@@ -1061,26 +1051,47 @@ function bindButtons() {
     async function start() {
       try {
         bgm.load();
-        bgm.volume = 0;
         await bgm.play();
-
         playing = true;
         localStorage.setItem(KEY_ON, "1");
         syncLabel();
-
-        const target = (parseInt(localStorage.getItem(KEY_VOL) || "45", 10) / 100);
-        let v = 0;
-
-        const fade = setInterval(() => {
-          v += 0.02;
-          bgm.volume = Math.min(v, target);
-          if (v >= target) clearInterval(fade);
-        }, 120);
       } catch {
         playing = false;
         localStorage.setItem(KEY_ON, "0");
         syncLabel();
       }
+   async function start() {
+  try {
+
+    bgm.load();
+
+    // 🎧 Start silent
+    bgm.volume = 0;
+
+    await bgm.play();
+
+    playing = true;
+    localStorage.setItem(KEY_ON, "1");
+    syncLabel();
+
+    // 🎬 Smooth cinematic fade-in
+    const target =
+      (parseInt(localStorage.getItem(KEY_VOL) || "45", 10)) / 100;
+
+    let v = 0;
+
+    const fade = setInterval(() => {
+      v += 0.02;
+      bgm.volume = Math.min(v, target);
+      if (v >= target) clearInterval(fade);
+    }, 120);
+
+  } catch {
+    playing = false;
+    localStorage.setItem(KEY_ON, "0");
+    syncLabel();
+  }
+}
     }
 
     function stop() {
@@ -1091,24 +1102,29 @@ function bindButtons() {
       syncLabel();
     }
 
+    // initial label
     syncLabel();
 
+    // manual toggle
     btnMusic.onclick = async () => {
       if (playing) stop();
       else await start();
     };
 
+    // volume slider
     if (bgmVol) {
       bgmVol.addEventListener("input", () => {
         const v = parseInt(bgmVol.value, 10);
         const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : 45));
         localStorage.setItem(KEY_VOL, String(clamped));
-        if (playing) bgm.volume = clamped / 100;
+        bgm.volume = clamped / 100;
       });
     }
 
+    // autoplay on first interaction if preference was ON
     if (prefOn) {
       const firstKick = async () => {
+        // if user toggled it off before firstKick fires, respect that
         if (localStorage.getItem(KEY_ON) !== "1") return;
         if (!playing) await start();
       };
