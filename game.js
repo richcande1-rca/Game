@@ -666,7 +666,6 @@ function ensureSceneImageElement() {
     wrap.appendChild(img);
   }
 
-  // Always reset handlers (safe even if already set)
   img.classList.remove("is-loaded");
 
   img.onerror = () => {
@@ -677,41 +676,6 @@ function ensureSceneImageElement() {
     wrap.style.display = "block";
     requestAnimationFrame(() => img.classList.add("is-loaded"));
   };
-
-  return img;
-}
-
-    // corner ornaments
-    const tl = document.createElement("div"); tl.className = "frame-corner tl";
-    const tr = document.createElement("div"); tr.className = "frame-corner tr";
-    const bl = document.createElement("div"); bl.className = "frame-corner bl";
-    const br = document.createElement("div"); br.className = "frame-corner br";
-    wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
-
-    // insert wrapper before scene text
-    sceneEl.parentNode.insertBefore(wrap, sceneEl);
-  }
-
-  let img = document.getElementById("sceneImage");
-  if (!img) {
-    img = document.createElement("img");
-    img.id = "sceneImage";
-    img.alt = "Scene illustration";
-    img.loading = "lazy";
-     img.classList.remove("is-loaded");
-
-  img.onerror = () => {
-  wrap.style.display = "none";
-};
-
-img.onload = () => {
-  wrap.style.display = "block";
-  // kick animation (next frame so CSS transition applies)
-  requestAnimationFrame(() => img.classList.add("is-loaded"));
-};
-
-    wrap.appendChild(img);
-  }
 
   return img;
 }
