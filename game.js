@@ -1042,8 +1042,9 @@ if (btnMusic && bgm) {
   const KEY_ON = "gothicChronicle.bgm.v1";
   const KEY_VOL = "gothicChronicle.bgmVol.v1";
 
-  // preference
-  let prefOn = localStorage.getItem(KEY_ON) === "1";
+// default to ON the first time
+if (localStorage.getItem(KEY_ON) === null) localStorage.setItem(KEY_ON, "1");
+let prefOn = localStorage.getItem(KEY_ON) === "1";
 
   // load volume
   const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
