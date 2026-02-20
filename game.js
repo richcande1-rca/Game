@@ -1042,6 +1042,24 @@ if (btnMusic && bgm) {
   const KEY_ON = "gothicChronicle.bgm.v1";
   const KEY_VOL = "gothicChronicle.bgmVol.v1";
 
+  async function kickMusicFromGesture() {
+  try {
+    const KEY_ON = "gothicChronicle.bgm.v1";
+    if (localStorage.getItem(KEY_ON) !== "1") return;
+
+    const bgm = document.getElementById("bgm");
+    if (!bgm) return;
+
+    // If already playing, do nothing
+    if (!bgm.paused) return;
+
+    // Play is allowed because this will be called inside a user gesture handler
+    await bgm.play();
+  } catch {
+    // ignore (browser blocked, or not ready yet)
+  }
+}
+
 // default to ON the first time
 if (localStorage.getItem(KEY_ON) === null) localStorage.setItem(KEY_ON, "1");
 let prefOn = localStorage.getItem(KEY_ON) === "1";
