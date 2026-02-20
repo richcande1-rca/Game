@@ -1130,7 +1130,7 @@ window.addEventListener("pointerdown", firstKick, { once: true });
 window.addEventListener("keydown", firstKick, { once: true });
 }
 }
-}
+
 /* ---------------------------
   BOOT
 ---------------------------- */
