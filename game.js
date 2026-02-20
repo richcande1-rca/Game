@@ -897,253 +897,250 @@ return out.trim();
   RENDER
 ---------------------------- */
 function render() {
-const sceneEl   = document.getElementById("scene");
-const metaEl    = document.getElementById("meta");
-const choicesEl = document.getElementById("choices");
+  const sceneEl   = document.getElementById("scene");
+  const metaEl    = document.getElementById("meta");
+  const choicesEl = document.getElementById("choices");
 
-if (!sceneEl || !metaEl || !choicesEl) return;
+  if (!sceneEl || !metaEl || !choicesEl) return;
 
-const r = room();
-const intents = getLegalIntents();
+  const r = room();
+  const intents = getLegalIntents();
 
-if (AUTO_NARRATOR && !OVERLAY) {
-OVERLAY = buildAutoOverlay(intents);
-saveOverlay();
-}
+  if (AUTO_NARRATOR && !OVERLAY) {
+    OVERLAY = buildAutoOverlay(intents);
+    saveOverlay();
+  }
 
-if (AUTO_IMAGES) {
-const img = ensureSceneImageElement();
-if (img) {
-const url = imageUrlForRoom(STATE.roomId);
-if (url) img.src = url;
-else img.style.display = "none";
-}
-}
+  if (AUTO_IMAGES) {
+    const img = ensureSceneImageElement();
+    if (img) {
+      const url = imageUrlForRoom(STATE.roomId);
+      if (url) {
+        img.style.display = "";
+        img.src = url;
+      } else {
+        img.style.display = "none";
+      }
+    }
+  }
 
-sceneEl.textContent =
-(OVERLAY?.sceneText && OVERLAY.sceneText.length)
-? OVERLAY.sceneText
-: narrateSceneBase();
+  sceneEl.textContent =
+    (OVERLAY?.sceneText && OVERLAY.sceneText.length)
+      ? OVERLAY.sceneText
+      : narrateSceneBase();
 
-const visible = (r.items || []).map(id => WORLD.items[id]?.name || id);
-metaEl.textContent =
-`${r.name} • Turn ${STATE.turn} • ` +
-(visible.length ? `You notice: ${visible.join(", ")}.` : `Nothing obvious presents itself.`);
+  const visible = (r.items || []).map(id => WORLD.items[id]?.name || id);
+  metaEl.textContent =
+    `${r.name} • Turn ${STATE.turn} • ` +
+    (visible.length ? `You notice: ${visible.join(", ")}.` : `Nothing obvious presents itself.`);
 
-choicesEl.innerHTML = "";
-for (let i = 0; i < intents.length && i < 9; i++) {
-const intent = intents[i];
-const btn = document.createElement("button");
-btn.className = "choice";
+  choicesEl.innerHTML = "";
+  for (let i = 0; i < intents.length && i < 9; i++) {
+    const intent = intents[i];
+    const btn = document.createElement("button");
+    btn.className = "choice";
 
-const overlayText = getOverlayChoiceText(intent.id);
-btn.textContent = `${i + 1}) ${overlayText || prettyChoiceBase(intent)}`;
+    const overlayText = getOverlayChoiceText(intent.id);
+    btn.textContent = `${i + 1}) ${overlayText || prettyChoiceBase(intent)}`;
 
-btn.onclick = () => {
-  if (window.gcMusicKick) window.gcMusicKick();  // 🔥 Android-safe music start
-  hideDrawer();
-  applyIntent(intent);
-};
-choicesEl.appendChild(btn);
-}
+    btn.onclick = () => {
+      if (window.gcMusicKick) window.gcMusicKick(); // Android-safe music start
+      hideDrawer();
+      applyIntent(intent);
+    };
+
+    choicesEl.appendChild(btn);
+  }
+} // ✅ CLOSES render()
+
 
 /* ---------------------------
-  INPUT
+  INPUT (bind once)
 ---------------------------- */
 window.addEventListener("keydown", (e) => {
-if (e.repeat) return;
+  if (e.repeat) return;
 
-if (e.key >= "1" && e.key <= "9") {
-const i = parseInt(e.key, 10) - 1;
-const intents = getLegalIntents();
-if (intents[i]) {
-hideDrawer();
-applyIntent(intents[i]);
-}
-}
+  if (e.key >= "1" && e.key <= "9") {
+    const i = parseInt(e.key, 10) - 1;
+    const intents = getLegalIntents();
+    if (intents[i]) {
+      hideDrawer();
+      applyIntent(intents[i]);
+    }
+    return;
+  }
 
-if (e.key.toLowerCase() === "i") showDrawer("Inventory", inventoryText());
-if (e.key.toLowerCase() === "c") showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
-if (e.key === "Escape") hideDrawer();
+  const k = e.key.toLowerCase();
+  if (k === "i") showDrawer("Inventory", inventoryText());
+  if (k === "c") showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
+  if (e.key === "Escape") hideDrawer();
 });
+
 
 /* ---------------------------
   BUTTONS
 ---------------------------- */
 function bindButtons() {
-const btnInv     = document.getElementById("btnInv");
-const btnChron   = document.getElementById("btnChron");
-const btnSave    = document.getElementById("btnSave");
-const btnReset   = document.getElementById("btnReset");
-const btnOverlay = document.getElementById("btnOverlay");
+  const btnInv     = document.getElementById("btnInv");
+  const btnChron   = document.getElementById("btnChron");
+  const btnSave    = document.getElementById("btnSave");
+  const btnReset   = document.getElementById("btnReset");
+  const btnOverlay = document.getElementById("btnOverlay");
 
-// Music UI
-const btnMusic   = document.getElementById("btnMusic");
-const bgm        = document.getElementById("bgm");
-const bgmVol     = document.getElementById("bgmVol");
+  // Music UI
+  const btnMusic   = document.getElementById("btnMusic");
+  const bgm        = document.getElementById("bgm");
+  const bgmVol     = document.getElementById("bgmVol");
 
-if (btnInv) btnInv.onclick = () => showDrawer("Inventory", inventoryText());
+  if (btnInv) btnInv.onclick = () => showDrawer("Inventory", inventoryText());
 
-if (btnChron) btnChron.onclick = () =>
-showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
+  if (btnChron) btnChron.onclick = () =>
+    showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
 
-if (btnSave) btnSave.onclick = () => {
-saveState();
-showDrawer("Saved", "State saved to localStorage.");
-};
-
-if (btnReset) btnReset.onclick = () => {
-localStorage.removeItem(SAVE_KEY);
-localStorage.removeItem(OVERLAY_KEY);
-
-// stop music + clear prefs
-try {
-if (bgm) { bgm.pause(); bgm.currentTime = 0; }
-localStorage.removeItem("gothicChronicle.bgm.v1");
-localStorage.removeItem("gothicChronicle.bgmVol.v1");
-if (btnMusic) btnMusic.textContent = "Music: Off";
-if (bgmVol) bgmVol.value = "45";
-} catch {}
-
-STATE = defaultState();
-OVERLAY = null;
-showDrawer("Reset", "Hard reset done. Reloading scene…");
-render();
-};
-
-if (btnOverlay) btnOverlay.onclick = () => {
-const legalIds = getLegalIntents().map(x => x.id);
-const template = {
-sceneText: "Optional: Replace the scene narration for this moment.",
-choices: legalIds.map(id => ({ id, text: `Gothic text for ${id}...` }))
-};
-
-const pasted = prompt(
-`Paste GPT overlay JSON here.\n\nLegal intent IDs right now:\n${legalIds.join(", ")}\n\nTip: IDs must match EXACTLY.`,
-JSON.stringify(template, null, 2)
-);
-
-if (pasted === null) return;
-if (!pasted.trim()) return;
-
-try {
-const res = applyOverlayFromJsonText(pasted);
-addChron(`Manual overlay applied: accepted ${res.accepted}/${res.legal} choices.`);
-render();
-} catch (err) {
-alert(err?.message || String(err));
-}
-};
-
-// --- Music toggle + Autoplay on first interaction + Volume slider ---
-if (btnMusic && bgm) {
-  const KEY_ON = "gothicChronicle.bgm.v1";
-  const KEY_VOL = "gothicChronicle.bgmVol.v1";
-
-  async function kickMusicFromGesture() {
-  try {
-    const KEY_ON = "gothicChronicle.bgm.v1";
-    if (localStorage.getItem(KEY_ON) !== "1") return;
-
-    const bgm = document.getElementById("bgm");
-    if (!bgm) return;
-
-    // If already playing, do nothing
-    if (!bgm.paused) return;
-
-    // Play is allowed because this will be called inside a user gesture handler
-    await bgm.play();
-  } catch {
-    // ignore (browser blocked, or not ready yet)
-  }
-}
-
-// default to ON the first time
-if (localStorage.getItem(KEY_ON) === null) localStorage.setItem(KEY_ON, "1");
-let prefOn = localStorage.getItem(KEY_ON) === "1";
-
-  // load volume
-  const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
-  const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
-  bgm.volume = volPct / 100;
-  if (bgmVol) bgmVol.value = String(volPct);
-
-  // actual playing state
-  let playing = false;
-
-  function syncLabel() {
-    btnMusic.textContent = playing ? "Music: On" : "Music: Off";
-  }
-
-  async function start() {
-    try {
-      bgm.load();
-
-      // 🎧 Start silent
-      bgm.volume = 0;
-
-      await bgm.play();
-
-      playing = true;
-      localStorage.setItem(KEY_ON, "1");
-      syncLabel();
-
-      // 🎬 Smooth cinematic fade-in
-      const target = 1.0;   // fade to full volume
-
-      let v = 0;
-
-      const fade = setInterval(() => {
-        v += 0.02;
-        bgm.volume = Math.min(v, target);
-        if (v >= target) clearInterval(fade);
-      }, 120);
-    } catch {
-      playing = false;
-      localStorage.setItem(KEY_ON, "0");
-      syncLabel();
-    }
-  }
-
-  function stop() {
-    playing = false;
-    localStorage.setItem(KEY_ON, "0");
-    bgm.pause();
-    bgm.currentTime = 0;
-    syncLabel();
-  }
-
-  // initial label
-  syncLabel();
-
-  // manual toggle
-  btnMusic.onclick = async () => {
-    if (playing) stop();
-    else await start();
+  if (btnSave) btnSave.onclick = () => {
+    saveState();
+    showDrawer("Saved", "State saved to localStorage.");
   };
 
-  // volume slider
-  if (bgmVol) {
-    bgmVol.addEventListener("input", () => {
-      const v = parseInt(bgmVol.value, 10);
-      const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : 45));
-      localStorage.setItem(KEY_VOL, String(clamped));
-      bgm.volume = clamped / 100;
-    });
+  if (btnReset) btnReset.onclick = () => {
+    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(OVERLAY_KEY);
+
+    // stop music + clear prefs
+    try {
+      if (bgm) { bgm.pause(); bgm.currentTime = 0; }
+      localStorage.removeItem("gothicChronicle.bgm.v1");
+      localStorage.removeItem("gothicChronicle.bgmVol.v1");
+      if (btnMusic) btnMusic.textContent = "Music: Off";
+      if (bgmVol) bgmVol.value = "45";
+    } catch {}
+
+    STATE = defaultState();
+    OVERLAY = null;
+    showDrawer("Reset", "Hard reset done. Reloading scene…");
+    render();
+  };
+
+  if (btnOverlay) btnOverlay.onclick = () => {
+    const legalIds = getLegalIntents().map(x => x.id);
+    const template = {
+      sceneText: "Optional: Replace the scene narration for this moment.",
+      choices: legalIds.map(id => ({ id, text: `Gothic text for ${id}...` }))
+    };
+
+    const pasted = prompt(
+      `Paste GPT overlay JSON here.\n\nLegal intent IDs right now:\n${legalIds.join(", ")}\n\nTip: IDs must match EXACTLY.`,
+      JSON.stringify(template, null, 2)
+    );
+
+    if (pasted === null) return;
+    if (!pasted.trim()) return;
+
+    try {
+      const res = applyOverlayFromJsonText(pasted);
+      addChron(`Manual overlay applied: accepted ${res.accepted}/${res.legal} choices.`);
+      render();
+    } catch (err) {
+      alert(err?.message || String(err));
+    }
+  };
+
+  // --- Music toggle + Autoplay on first interaction + Volume slider ---
+  if (btnMusic && bgm) {
+    const KEY_ON  = "gothicChronicle.bgm.v1";
+    const KEY_VOL = "gothicChronicle.bgmVol.v1";
+
+    // default to ON the first time
+    if (localStorage.getItem(KEY_ON) === null) localStorage.setItem(KEY_ON, "1");
+
+    // load volume (0..100)
+    const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
+    const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
+    if (bgmVol) bgmVol.value = String(volPct);
+
+    let playing = false;
+
+    function targetVolume() {
+      const v = parseInt(localStorage.getItem(KEY_VOL) || String(volPct), 10);
+      const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : volPct));
+      return clamped / 100;
+    }
+
+    function syncLabel() {
+      btnMusic.textContent = playing ? "Music: On" : "Music: Off";
+    }
+
+    async function start() {
+      try {
+        // Start silent
+        bgm.volume = 0;
+
+        await bgm.play();
+
+        playing = true;
+        localStorage.setItem(KEY_ON, "1");
+        syncLabel();
+
+        // Smooth fade to slider target (NOT always 1.0)
+        const target = targetVolume();
+        let v = 0;
+
+        const fade = setInterval(() => {
+          v += 0.02;
+          bgm.volume = Math.min(v, target);
+          if (v >= target) clearInterval(fade);
+        }, 120);
+      } catch {
+        playing = false;
+        localStorage.setItem(KEY_ON, "0");
+        syncLabel();
+      }
+    }
+
+    function stop() {
+      playing = false;
+      localStorage.setItem(KEY_ON, "0");
+      bgm.pause();
+      bgm.currentTime = 0;
+      syncLabel();
+    }
+
+    // initial label (based on pref; actual playback waits for gesture)
+    syncLabel();
+
+    // manual toggle
+    btnMusic.onclick = async () => {
+      if (playing) stop();
+      else await start();
+    };
+
+    // volume slider
+    if (bgmVol) {
+      bgmVol.addEventListener("input", () => {
+        const v = parseInt(bgmVol.value, 10);
+        const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : 45));
+        localStorage.setItem(KEY_VOL, String(clamped));
+        // If currently playing, apply immediately
+        if (playing) bgm.volume = clamped / 100;
+      });
+    }
+
+    // expose a safe "kick" callable from any click handler
+    window.gcMusicKick = async () => {
+      if (localStorage.getItem(KEY_ON) !== "1") return;
+      if (!playing) await start();
+    };
+
+    // autoplay on first interaction (Android-friendly)
+    const firstKick = async () => { await window.gcMusicKick(); };
+
+    window.addEventListener("touchstart", firstKick, { once: true, passive: true });
+    window.addEventListener("click", firstKick, { once: true });
+    window.addEventListener("pointerdown", firstKick, { once: true });
+    window.addEventListener("keydown", firstKick, { once: true });
   }
+}
 
-  // autoplay on first interaction (Android-friendly)
-const firstKick = async () => {
-  if (localStorage.getItem(KEY_ON) !== "1") return;
-  if (!playing) await start();
-};
-
-window.addEventListener("touchstart", firstKick, { once: true, passive: true });
-window.addEventListener("click", firstKick, { once: true });
-window.addEventListener("pointerdown", firstKick, { once: true });
-window.addEventListener("keydown", firstKick, { once: true });
-} // <-- closes if (btnMusic && bgm)
-} // <-- closes function bindButtons()
 
 /* ---------------------------
   BOOT
