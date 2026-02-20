@@ -1118,7 +1118,7 @@ function bindButtons() {
       window.addEventListener("keydown", firstKick, { once: true });
     }
   }
-
+}
 /* ---------------------------
    BOOT
 ---------------------------- */
