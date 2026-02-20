@@ -1067,7 +1067,8 @@ function bindButtons() {
     }
 
     function syncLabel() {
-      btnMusic.textContent = playing ? "Music: On" : "Music: Off";
+      const prefOn = localStorage.getItem(KEY_ON) === "1";
+      btnMusic.textContent = (playing || prefOn) ? "Music: On" : "Music: Off";
     }
 
     async function start() {
@@ -1091,8 +1092,9 @@ function bindButtons() {
           if (v >= target) clearInterval(fade);
         }, 120);
       } catch {
+        // IMPORTANT: do NOT turn the preference off here.
+        // Autoplay can fail before a valid user gesture; we want later gestures to retry.
         playing = false;
-        localStorage.setItem(KEY_ON, "0");
         syncLabel();
       }
     }
