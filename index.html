@@ -335,7 +335,12 @@
         <button class="tinybtn" id="btnSave" type="button">Force Save</button>
         <button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
 
-        <button class="tinybtn music" id="btnMusic" type="button">Music: Off</button>
+       <button class="tinybtn music" id="btnMusic" type="button">Music: Off</button>
+
+<label class="vol" title="Music volume">
+  <span class="vol-label">Vol</span>
+  <input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
+</label>
 
 <audio id="bgm" preload="auto" loop>
   <source src="assets/bgm.mp3" type="audio/mpeg">
