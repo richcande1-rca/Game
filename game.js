@@ -1039,97 +1039,94 @@ alert(err?.message || String(err));
 
 // --- Music toggle + Autoplay on first interaction + Volume slider ---
 if (btnMusic && bgm) {
-const KEY_ON  = "gothicChronicle.bgm.v1";
-const KEY_VOL = "gothicChronicle.bgmVol.v1";
+  const KEY_ON = "gothicChronicle.bgm.v1";
+  const KEY_VOL = "gothicChronicle.bgmVol.v1";
 
-// preference
-let prefOn = localStorage.getItem(KEY_ON) === "1";
+  // preference
+  let prefOn = localStorage.getItem(KEY_ON) === "1";
 
-// load volume
-const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
-const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
-bgm.volume = volPct / 100;
-if (bgmVol) bgmVol.value = String(volPct);
+  // load volume
+  const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
+  const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
+  bgm.volume = volPct / 100;
+  if (bgmVol) bgmVol.value = String(volPct);
 
-// actual playing state
-let playing = false;
+  // actual playing state
+  let playing = false;
 
-function syncLabel() {
-btnMusic.textContent = playing ? "Music: On" : "Music: Off";
-}
+  function syncLabel() {
+    btnMusic.textContent = playing ? "Music: On" : "Music: Off";
+  }
 
-async function start() {
-try {
+  async function start() {
+    try {
+      bgm.load();
 
-bgm.load();
+      // 🎧 Start silent
+      bgm.volume = 0;
 
-// 🎧 Start silent
-bgm.volume = 0;
+      await bgm.play();
 
-await bgm.play();
+      playing = true;
+      localStorage.setItem(KEY_ON, "1");
+      syncLabel();
 
-playing = true;
-localStorage.setItem(KEY_ON, "1");
-syncLabel();
+      // 🎬 Smooth cinematic fade-in
+      const target = (parseInt(localStorage.getItem(KEY_VOL) || "45", 10)) / 100;
 
-// 🎬 Smooth cinematic fade-in
-const target =
-(parseInt(localStorage.getItem(KEY_VOL) || "45", 10)) / 100;
+      let v = 0;
 
-let v = 0;
+      const fade = setInterval(() => {
+        v += 0.02;
+        bgm.volume = Math.min(v, target);
+        if (v >= target) clearInterval(fade);
+      }, 120);
+    } catch {
+      playing = false;
+      localStorage.setItem(KEY_ON, "0");
+      syncLabel();
+    }
+  }
 
-const fade = setInterval(() => {
-v += 0.02;
-bgm.volume = Math.min(v, target);
-if (v >= target) clearInterval(fade);
-}, 120);
+  function stop() {
+    playing = false;
+    localStorage.setItem(KEY_ON, "0");
+    bgm.pause();
+    bgm.currentTime = 0;
+    syncLabel();
+  }
 
-} catch {
-playing = false;
-localStorage.setItem(KEY_ON, "0");
-syncLabel();
-}
-}
-}
+  // initial label
+  syncLabel();
 
-function stop() {
-playing = false;
-localStorage.setItem(KEY_ON, "0");
-bgm.pause();
-bgm.currentTime = 0;
-syncLabel();
-}
+  // manual toggle
+  btnMusic.onclick = async () => {
+    if (playing) stop();
+    else await start();
+  };
 
-// initial label
-syncLabel();
+  // volume slider
+  if (bgmVol) {
+    bgmVol.addEventListener("input", () => {
+      const v = parseInt(bgmVol.value, 10);
+      const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : 45));
+      localStorage.setItem(KEY_VOL, String(clamped));
+      bgm.volume = clamped / 100;
+    });
+  }
 
-// manual toggle
-btnMusic.onclick = async () => {
-if (playing) stop();
-else await start();
-};
-
-// volume slider
-if (bgmVol) {
-bgmVol.addEventListener("input", () => {
-const v = parseInt(bgmVol.value, 10);
-const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : 45));
-localStorage.setItem(KEY_VOL, String(clamped));
-bgm.volume = clamped / 100;
-});
-}
-
-// autoplay on first interaction if preference was ON
-if (prefOn) {
-const firstKick = async () => {
-// if user toggled it off before firstKick fires, respect that
-if (localStorage.getItem(KEY_ON) !== "1") return;
-if (!playing) await start();
-};
-window.addEventListener("pointerdown", firstKick, { once: true });
-window.addEventListener("keydown", firstKick, { once: true });
-}
-
+  // autoplay on first interaction if preference was ON
+  if (prefOn) {
+    const firstKick = async () => {
+      // if user toggled it off before firstKick fires, respect that
+      if (localStorage.getItem(KEY_ON) !== "1") return;
+      if (!playing) await start();
+    };
+    window.addEventListener("pointerdown", firstKick, { once: true });
+    window.addEventListener("keydown", firstKick, { once: true });
+  }
+} // <-- closes if (btnMusic && bgm)
+} // <-- closes function bindButtons()
 
 /* ---------------------------
   BOOT
