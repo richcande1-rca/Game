@@ -637,11 +637,49 @@ function ensureSceneImageElement() {
   const sceneEl = document.getElementById("scene");
   if (!sceneEl) return null;
 
-  let wrap = document.getElementById("sceneImageFrame");
+  // Prefer the existing HTML mount point:
+  let wrap = document.getElementById("sceneFrame");
+
+  // If it's not in the HTML for some reason, create it.
   if (!wrap) {
     wrap = document.createElement("div");
-    wrap.id = "sceneImageFrame";
+    wrap.id = "sceneFrame";
     wrap.className = "frame-wrap";
+    wrap.style.display = "none";
+
+    // corner ornaments
+    const tl = document.createElement("span"); tl.className = "frame-corner tl";
+    const tr = document.createElement("span"); tr.className = "frame-corner tr";
+    const bl = document.createElement("span"); bl.className = "frame-corner bl";
+    const br = document.createElement("span"); br.className = "frame-corner br";
+    wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
+
+    sceneEl.parentNode.insertBefore(wrap, sceneEl);
+  }
+
+  let img = document.getElementById("sceneImage");
+  if (!img) {
+    img = document.createElement("img");
+    img.id = "sceneImage";
+    img.alt = "Scene illustration";
+    img.loading = "lazy";
+    wrap.appendChild(img);
+  }
+
+  // Always reset handlers (safe even if already set)
+  img.classList.remove("is-loaded");
+
+  img.onerror = () => {
+    wrap.style.display = "none";
+  };
+
+  img.onload = () => {
+    wrap.style.display = "block";
+    requestAnimationFrame(() => img.classList.add("is-loaded"));
+  };
+
+  return img;
+}
 
     // corner ornaments
     const tl = document.createElement("div"); tl.className = "frame-corner tl";
