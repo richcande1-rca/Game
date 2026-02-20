@@ -660,9 +660,17 @@ function ensureSceneImageElement() {
     img.id = "sceneImage";
     img.alt = "Scene illustration";
     img.loading = "lazy";
+     img.classList.remove("is-loaded");
 
-    img.onerror = () => { wrap.style.display = "none"; };
-    img.onload  = () => { wrap.style.display = "block"; };
+  img.onerror = () => {
+  wrap.style.display = "none";
+};
+
+img.onload = () => {
+  wrap.style.display = "block";
+  // kick animation (next frame so CSS transition applies)
+  requestAnimationFrame(() => img.classList.add("is-loaded"));
+};
 
     wrap.appendChild(img);
   }
