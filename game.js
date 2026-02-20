@@ -940,13 +940,11 @@ const overlayText = getOverlayChoiceText(intent.id);
 btn.textContent = `${i + 1}) ${overlayText || prettyChoiceBase(intent)}`;
 
 btn.onclick = () => {
-hideDrawer();
-applyIntent(intent);
+  if (window.gcMusicKick) window.gcMusicKick();  // 🔥 Android-safe music start
+  hideDrawer();
+  applyIntent(intent);
 };
 choicesEl.appendChild(btn);
-}
-
-saveState();
 }
 
 /* ---------------------------
