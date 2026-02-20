@@ -1024,10 +1024,24 @@ function bindButtons() {
     }
   };
 
-  // --- Music toggle (autoplay-safe + remembers preference) ---
+  // --- Music toggle + Autoplay on first interaction + Volume slider ---
+  const btnMusic = document.getElementById("btnMusic");
+  const bgm      = document.getElementById("bgm");
+  const bgmVol   = document.getElementById("bgmVol");
+
   if (btnMusic && bgm) {
-    const key = "gothicChronicle.bgm.v1";
-    let on = localStorage.getItem(key) === "1";
+    const KEY_ON  = "gothicChronicle.bgm.v1";
+    const KEY_VOL = "gothicChronicle.bgmVol.v1";
+
+    let on = localStorage.getItem(KEY_ON) === "1";
+
+    // load volume (0..1)
+    const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
+    let vol01 = Math.max(0, Math.min(1, (isFinite(savedVol) ? savedVol : 45) / 100));
+    bgm.volume = vol01;
+
+    // init slider UI
+    if (bgmVol) bgmVol.value = String(Math.round(vol01 * 100));
 
     function syncLabel() {
       btnMusic.textContent = on ? "Music: On" : "Music: Off";
@@ -1035,43 +1049,65 @@ function bindButtons() {
 
     async function start() {
       try {
-        bgm.volume = 0.45;
-        bgm.load();
-        await bgm.play();          // click gesture -> should succeed
+        bgm.load();          // ensures network request is warm/visible
+        await bgm.play();    // will succeed only after a user gesture
         on = true;
-        localStorage.setItem(key, "1");
+        localStorage.setItem(KEY_ON, "1");
         syncLabel();
       } catch (err) {
+        // If blocked, keep off (browser policy)
         on = false;
-        localStorage.setItem(key, "0");
+        localStorage.setItem(KEY_ON, "0");
         syncLabel();
-        addChron(`Music failed: ${err?.message || String(err)}`);
-        showDrawer("Music", `Could not start audio:\n${err?.message || String(err)}`);
       }
     }
 
     function stop() {
       on = false;
-      localStorage.setItem(key, "0");
+      localStorage.setItem(KEY_ON, "0");
       bgm.pause();
       bgm.currentTime = 0;
       syncLabel();
     }
 
-    syncLabel();
+    // Autoplay on first interaction IF user preference is On
+    // (If they turned it off last time, we respect that.)
+    if (on) {
+      on = false; // show Off until it actually starts
+      syncLabel();
 
+      const firstKick = async () => {
+        // don’t force-start if user toggled off before the first interaction fires
+        if (localStorage.getItem(KEY_ON) !== "1") return;
+        await start();
+      };
+
+      window.addEventListener("pointerdown", firstKick, { once: true });
+      window.addEventListener("keydown", firstKick, { once: true });
+    } else {
+      syncLabel();
+    }
+
+    // Manual toggle button
     btnMusic.onclick = async () => {
       if (on) stop();
-      else await start();
+      else {
+        localStorage.setItem(KEY_ON, "1"); // record preference before attempting
+        await start();
+      }
     };
 
-    // If user previously enabled it, start on first user interaction (safe)
-    if (on) {
-      on = false; syncLabel();
-      window.addEventListener("pointerdown", async () => { await start(); }, { once: true });
+    // Volume slider
+    if (bgmVol) {
+      bgmVol.addEventListener("input", () => {
+        const v = parseInt(bgmVol.value, 10);
+        const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : 45));
+        localStorage.setItem(KEY_VOL, String(clamped));
+        vol01 = clamped / 100;
+        bgm.volume = vol01;
+      });
     }
   }
-}
 
 /* ---------------------------
    BOOT
