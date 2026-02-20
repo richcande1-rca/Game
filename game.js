@@ -1116,16 +1116,16 @@ let prefOn = localStorage.getItem(KEY_ON) === "1";
     });
   }
 
-  // autoplay on first interaction if preference was ON
-  if (prefOn) {
-    const firstKick = async () => {
-      // if user toggled it off before firstKick fires, respect that
-      if (localStorage.getItem(KEY_ON) !== "1") return;
-      if (!playing) await start();
-    };
-    window.addEventListener("pointerdown", firstKick, { once: true });
-    window.addEventListener("keydown", firstKick, { once: true });
-  }
+  // autoplay on first interaction (Android-friendly)
+const firstKick = async () => {
+  if (localStorage.getItem(KEY_ON) !== "1") return;
+  if (!playing) await start();
+};
+
+window.addEventListener("touchstart", firstKick, { once: true, passive: true });
+window.addEventListener("click", firstKick, { once: true });
+window.addEventListener("pointerdown", firstKick, { once: true });
+window.addEventListener("keydown", firstKick, { once: true });
 } // <-- closes if (btnMusic && bgm)
 } // <-- closes function bindButtons()
 
