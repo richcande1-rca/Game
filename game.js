@@ -1042,11 +1042,29 @@ if (btnMusic && bgm) {
   const KEY_ON = "gothicChronicle.bgm.v1";
   const KEY_VOL = "gothicChronicle.bgmVol.v1";
 
-  // default to ON the first time
-  if (localStorage.getItem(KEY_ON) === null) localStorage.setItem(KEY_ON, "1");
-  let prefOn = localStorage.getItem(KEY_ON) === "1"; // kept (doesn't hurt)
+  async function kickMusicFromGesture() {
+  try {
+    const KEY_ON = "gothicChronicle.bgm.v1";
+    if (localStorage.getItem(KEY_ON) !== "1") return;
 
-  // load volume (slider still controls steady-state volume later)
+    const bgm = document.getElementById("bgm");
+    if (!bgm) return;
+
+    // If already playing, do nothing
+    if (!bgm.paused) return;
+
+    // Play is allowed because this will be called inside a user gesture handler
+    await bgm.play();
+  } catch {
+    // ignore (browser blocked, or not ready yet)
+  }
+}
+
+// default to ON the first time
+if (localStorage.getItem(KEY_ON) === null) localStorage.setItem(KEY_ON, "1");
+let prefOn = localStorage.getItem(KEY_ON) === "1";
+
+  // load volume
   const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
   const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
   bgm.volume = volPct / 100;
@@ -1073,9 +1091,10 @@ if (btnMusic && bgm) {
       syncLabel();
 
       // 🎬 Smooth cinematic fade-in
-      const target = 1.0; // fade to full volume
+      const target = 1.0;   // fade to full volume
 
       let v = 0;
+
       const fade = setInterval(() => {
         v += 0.02;
         bgm.volume = Math.min(v, target);
@@ -1115,18 +1134,24 @@ if (btnMusic && bgm) {
     });
   }
 
-  // ---- Autoplay on first interaction (ANDROID FIX) ----
-  // Must be synchronous: Android Chrome can drop "user activation" across async/await.
-  function firstKick() {
-    if (localStorage.getItem(KEY_ON) !== "1") return;
-    if (playing) return;
-    try {
-      start(); // don't await
-    } catch {}
-  }
+  // autoplay on first interaction (Android-friendly)
+const firstKick = async () => {
+  if (localStorage.getItem(KEY_ON) !== "1") return;
+  if (!playing) await start();
+};
 
-  window.addEventListener("touchstart", firstKick, { once: true, passive: true });
-  window.addEventListener("click", firstKick, { once: true });
-  window.addEventListener("pointerdown", firstKick, { once: true });
-  window.addEventListener("keydown", firstKick, { once: true });
-}
+window.addEventListener("touchstart", firstKick, { once: true, passive: true });
+window.addEventListener("click", firstKick, { once: true });
+window.addEventListener("pointerdown", firstKick, { once: true });
+window.addEventListener("keydown", firstKick, { once: true });
+} // <-- closes if (btnMusic && bgm)
+} // <-- closes function bindButtons()
+
+/* ---------------------------
+  BOOT
+---------------------------- */
+bindButtons();
+render();
+
+// Handy in console:
+window.getLegalIntents = getLegalIntents;
