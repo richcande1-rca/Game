@@ -1084,6 +1084,94 @@ function bindButtons() {
     // load volume
     const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
     const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
+
+    // set slider + volume (real volume will be used as target)
+    if (bgmVol) bgmVol.value = String(volPct);
+    bgm.volume = volPct / 100;
+
+    let playing = false;
+
+    function syncLabel() {
+      btnMusic.textContent = playing ? "Music: On" : "Music: Off";
+    }
+
+    async function start() {
+      try {
+        bgm.load();
+
+        // start silent
+        bgm.volume = 0;
+        await bgm.play();
+
+        playing = true;
+        localStorage.setItem(KEY_ON, "1");
+        syncLabel();
+
+        // fade up to saved target
+        const target = (parseInt(localStorage.getItem(KEY_VOL) || "45", 10) / 100);
+        let v = 0;
+
+        const fade = setInterval(() => {
+          v += 0.02;
+          bgm.volume = Math.min(v, target);
+          if (v >= target) clearInterval(fade);
+        }, 120);
+
+      } catch {
+        playing = false;
+        localStorage.setItem(KEY_ON, "0");
+        syncLabel();
+      }
+    }
+
+    function stop() {
+      playing = false;
+      localStorage.setItem(KEY_ON, "0");
+      bgm.pause();
+      bgm.currentTime = 0;
+      syncLabel();
+    }
+
+    // initial label
+    syncLabel();
+
+    // manual toggle
+    btnMusic.onclick = async () => {
+      if (playing) stop();
+      else await start();
+    };
+
+    // volume slider
+    if (bgmVol) {
+      bgmVol.addEventListener("input", () => {
+        const v = parseInt(bgmVol.value, 10);
+        const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : 45));
+        localStorage.setItem(KEY_VOL, String(clamped));
+
+        // if playing, apply instantly; if not, it becomes next start() target
+        if (playing) bgm.volume = clamped / 100;
+      });
+    }
+
+    // autoplay on first interaction if preference was ON
+    if (prefOn) {
+      const firstKick = async () => {
+        if (localStorage.getItem(KEY_ON) !== "1") return;
+        if (!playing) await start();
+      };
+      window.addEventListener("pointerdown", firstKick, { once: true });
+      window.addEventListener("keydown", firstKick, { once: true });
+    }
+  }
+    const KEY_ON  = "gothicChronicle.bgm.v1";
+    const KEY_VOL = "gothicChronicle.bgmVol.v1";
+
+    // preference
+    let prefOn = localStorage.getItem(KEY_ON) === "1";
+
+    // load volume
+    const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
+    const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
     bgm.volume = volPct / 100;
     if (bgmVol) bgmVol.value = String(volPct);
 
