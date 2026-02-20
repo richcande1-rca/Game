@@ -1048,18 +1048,38 @@ function bindButtons() {
       btnMusic.textContent = playing ? "Music: On" : "Music: Off";
     }
 
-    async function start() {
-      try {
-        bgm.load();
-        await bgm.play();
-        playing = true;
-        localStorage.setItem(KEY_ON, "1");
-        syncLabel();
-      } catch {
-        playing = false;
-        localStorage.setItem(KEY_ON, "0");
-        syncLabel();
-      }
+   async function start() {
+  try {
+
+    bgm.load();
+
+    // 🎧 Start silent
+    bgm.volume = 0;
+
+    await bgm.play();
+
+    playing = true;
+    localStorage.setItem(KEY_ON, "1");
+    syncLabel();
+
+    // 🎬 Smooth cinematic fade-in
+    const target =
+      (parseInt(localStorage.getItem(KEY_VOL) || "45", 10)) / 100;
+
+    let v = 0;
+
+    const fade = setInterval(() => {
+      v += 0.02;
+      bgm.volume = Math.min(v, target);
+      if (v >= target) clearInterval(fade);
+    }, 120);
+
+  } catch {
+    playing = false;
+    localStorage.setItem(KEY_ON, "0");
+    syncLabel();
+  }
+}
     }
 
     function stop() {
