@@ -1073,7 +1073,7 @@ let prefOn = localStorage.getItem(KEY_ON) === "1";
       syncLabel();
 
       // 🎬 Smooth cinematic fade-in
-      const target = (parseInt(localStorage.getItem(KEY_VOL) || "45", 10)) / 100;
+      const target = 1.0;   // fade to full volume
 
       let v = 0;
 
