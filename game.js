@@ -1145,65 +1145,50 @@ window.addEventListener("keydown", firstKick, { once: true });
 
 
 /* ---------------------------
-  BOOT
-  BOOT  (replace your old BOOT block with this)
+ BOOT
 ---------------------------- */
 bindButtons();
+render();
 
 function showGame(fromContinue = false) {
-function fadeToScreen(fromContinue = false) {
-const title = document.getElementById("titleScreen");
-const game  = document.getElementById("gameUI");
+  const title = document.getElementById("titleScreen");
+  const game  = document.getElementById("gameUI");
 
   if (title) title.style.display = "none";
   if (game)  game.style.display  = "block";
-  if (!title || !game) return;
 
-// If Begin → start fresh
-if (!fromContinue) {
-localStorage.removeItem(SAVE_KEY);
-localStorage.removeItem(OVERLAY_KEY);
-STATE = defaultState();
-OVERLAY = null;
-}
+  // If Begin → start fresh
+  if (!fromContinue) {
+    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(OVERLAY_KEY);
+    STATE = defaultState();
+    OVERLAY = null;
+  }
 
   render();
-  // Fade: title -> game
-  game.classList.add("is-active");
-  title.classList.remove("is-active");
 
   // kick music after valid user gesture
   if (window.gcMusicKick) window.gcMusicKick();
-  // Render once the game is becoming visible (next frame so layout is ready)
-  requestAnimationFrame(() => {
-    render();
-    if (window.gcMusicKick) window.gcMusicKick(); // gesture-safe kick
-  });
 }
 
 (function initTitleScreen() {
-const btnStart = document.getElementById("btnStart");
-const btnCont  = document.getElementById("btnContinue");
+  const btnStart = document.getElementById("btnStart");
+  const btnCont  = document.getElementById("btnContinue");
 
-const hasSave = !!localStorage.getItem(SAVE_KEY);
-if (btnCont && hasSave) btnCont.style.display = "";
+  const hasSave = !!localStorage.getItem(SAVE_KEY);
+  if (btnCont && hasSave) btnCont.style.display = "";
 
   if (btnStart) btnStart.onclick = () => showGame(false);
   if (btnCont)  btnCont.onclick  = () => showGame(true);
-  if (btnStart) btnStart.onclick = () => fadeToScreen(false);
-  if (btnCont)  btnCont.onclick  = () => fadeToScreen(true);
 
   // Press Enter to begin
-  // Press Enter to begin (Continue if save exists)
-window.addEventListener("keydown", (e) => {
-if (e.repeat) return;
-if (e.key === "Enter") {
+  window.addEventListener("keydown", (e) => {
+    if (e.repeat) return;
+    if (e.key === "Enter") {
       if (hasSave) showGame(true);
       else showGame(false);
-      if (hasSave) fadeToScreen(true);
-      else fadeToScreen(false);
-}
-}, { once: true });
+    }
+  }, { once: true });
 })();
 
 // Handy in console:
