@@ -1154,8 +1154,9 @@ function showGame(fromContinue = false) {
   const title = document.getElementById("titleScreen");
   const game  = document.getElementById("gameUI");
 
-  if (title) title.style.display = "none";
-  if (game)  game.style.display  = "block";
+  // Switch screens using your CSS system
+  if (title) title.classList.remove("is-active");
+  if (game)  game.classList.add("is-active");
 
   // If Begin → start fresh
   if (!fromContinue) {
@@ -1164,6 +1165,12 @@ function showGame(fromContinue = false) {
     STATE = defaultState();
     OVERLAY = null;
   }
+
+  render();
+
+  // kick music after valid user gesture
+  if (window.gcMusicKick) window.gcMusicKick();
+}
 
   render();
 
