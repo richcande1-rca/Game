@@ -326,31 +326,24 @@ background: #0b0b0b;
 position: relative;
 }
 
-    .title-img{
-      width: 100%;
-      height: 100%;
-      display:block;
-      object-fit: cover;
-      filter: contrast(1.02) saturate(0.95);
-    }
-   .title-img{
-  width:100%;
-  height:100%;
-  display:block;
+.title-img{
+width:100%;
+height:100%;
+display:block;
 
-  /* Desktop cinematic fill */
-  object-fit: cover;
-  object-position: center top;   /* prevents important top area cropping */
+/* Desktop cinematic fill */
+object-fit: cover;
+object-position: center top;   /* prevents important top area cropping */
 
-  filter: contrast(1.02) saturate(0.95);
+filter: contrast(1.02) saturate(0.95);
 }
 
 /* Hybrid behaviour — no crop on smaller screens */
 @media (max-width:720px){
-  .title-img{
-    object-fit: contain;
-    background:#060606;  /* clean letterbox */
-  }
+.title-img{
+object-fit: contain;
+background:#060606;  /* clean letterbox */
+}
 }
 
 .title-overlay{
@@ -416,11 +409,37 @@ flex-direction: column;
 overflow: hidden; /* no page scroll, only inner scroll */
 }
 
+ .game-scroll{
 .game-scroll{
 flex: 1;
 min-height: 0;
-overflow: auto; /* ✅ internal scrolling only if needed */
-padding-right: 2px; /* tiny room for scrollbar */
+  overflow: hidden;          /* no big container scrollbar */
+  display: flex;             /* ✅ make children flex items */
+  flex-direction: column;    /* ✅ stack scene/meta/choices */
+  overflow-y: auto;     /* ✅ this becomes the main scrollbar */
+  overflow-x: hidden;
+}
+
+#scene{
+  flex: 1;                   /* ✅ this becomes the scroll region */
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;        /* keep text off scrollbar */
+  flex: 0 0 auto;       /* ✅ let it size naturally */
+  min-height: auto;
+  overflow: visible;    /* ✅ no inner scrollbar */
+  padding-right: 0;
+}
+
+#meta, .divider, #choices, #drawer{
+flex: 0 0 auto;            /* don't steal height */
+}
+    #choices{
+  max-height: 34vh;
+  overflow-y: auto;
+   #choices{
+  max-height: none;
+  overflow: visible;
 }
 </style>
 </head>
