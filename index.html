@@ -409,27 +409,26 @@
       overflow: hidden; /* no page scroll, only inner scroll */
     }
 
- .game-scroll{
+.game-scroll{
   flex: 1;
   min-height: 0;
-  overflow: hidden;          /* no big container scrollbar */
-  display: flex;             /* ✅ make children flex items */
-  flex-direction: column;    /* ✅ stack scene/meta/choices */
+  overflow-y: auto;     /* ✅ this becomes the main scrollbar */
+  overflow-x: hidden;
 }
 
 #scene{
-  flex: 1;                   /* ✅ this becomes the scroll region */
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 6px;        /* keep text off scrollbar */
+  flex: 0 0 auto;       /* ✅ let it size naturally */
+  min-height: auto;
+  overflow: visible;    /* ✅ no inner scrollbar */
+  padding-right: 0;
 }
 
 #meta, .divider, #choices, #drawer{
   flex: 0 0 auto;            /* don't steal height */
 }
-    #choices{
-  max-height: 34vh;
-  overflow-y: auto;
+   #choices{
+  max-height: none;
+  overflow: visible;
 }
   </style>
 </head>
