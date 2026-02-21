@@ -1148,7 +1148,47 @@ function bindButtons() {
   BOOT
 ---------------------------- */
 bindButtons();
-render();
+
+function showGame(fromContinue = false) {
+  const title = document.getElementById("titleScreen");
+  const game  = document.getElementById("gameUI");
+
+  if (title) title.style.display = "none";
+  if (game)  game.style.display  = "block";
+
+  // If Begin → start fresh
+  if (!fromContinue) {
+    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(OVERLAY_KEY);
+    STATE = defaultState();
+    OVERLAY = null;
+  }
+
+  render();
+
+  // kick music after valid user gesture
+  if (window.gcMusicKick) window.gcMusicKick();
+}
+
+(function initTitleScreen() {
+  const btnStart = document.getElementById("btnStart");
+  const btnCont  = document.getElementById("btnContinue");
+
+  const hasSave = !!localStorage.getItem(SAVE_KEY);
+  if (btnCont && hasSave) btnCont.style.display = "";
+
+  if (btnStart) btnStart.onclick = () => showGame(false);
+  if (btnCont)  btnCont.onclick  = () => showGame(true);
+
+  // Press Enter to begin
+  window.addEventListener("keydown", (e) => {
+    if (e.repeat) return;
+    if (e.key === "Enter") {
+      if (hasSave) showGame(true);
+      else showGame(false);
+    }
+  }, { once: true });
+})();
 
 // Handy in console:
 window.getLegalIntents = getLegalIntents;
