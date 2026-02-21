@@ -454,9 +454,26 @@ function narrateSceneBase() {
 
 function prettyChoiceBase(intent) {
   if (intent.type === "move") {
-    const toName = WORLD.rooms[intent.to]?.name || intent.to;
-    return `Go ${intent.dir} toward ${toName}.`;
+  STATE.roomId = intent.to;
+
+  addChron(`Turn ${STATE.turn}: Moved ${intent.dir.toUpperCase()} to ${WORLD.rooms[intent.to]?.name || intent.to}.`);
+
+  // ✅ Courtyard ghost scene — fire once on first entry
+  if (intent.to === "courtyard" && !hasFlag("courtyard_ghost_seen")) {
+    setFlag("courtyard_ghost_seen", true);
+
+    emitImageTrigger(
+      "Courtyard Apparition",
+      "As you step into the moonlit courtyard, an apparition forms near the cracked fountain—tall, pale, half-remembered. Fog coils around its feet like it belongs to the stone. The statues seem to watch."
+    );
+
+    addChron(`Turn ${STATE.turn}: Saw an apparition in the courtyard.`);
   }
+
+  saveState();
+  render();
+  return;
+}
   if (intent.type === "take") {
     const nm = WORLD.items[intent.itemId]?.name || intent.itemId;
     return `Take the ${nm}.`;
