@@ -395,8 +395,12 @@
       color:#b8b8b8;
       font-size: 12px;
     }
+/* --- Game screen layout: panel fills viewport; image fixed; lower UI scrolls --- */
+#gameUI{
+  align-items: stretch;
+  justify-content: stretch;
+}
 
- /* panel fills viewport; image + scroll area + toolbar */
 #gameUI .panel{
   height: 100%;
   display: flex;
@@ -405,24 +409,30 @@
   min-height: 0;
 }
 
-/* fixed image area */
+/* Fixed image area */
 #sceneImageMount{
   flex: 0 0 auto;
 }
 
-/* only this area scrolls */
+/* Scrollable lower UI */
 .ui-scroll{
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 6px;
+
+  /* IMPORTANT: make it a column so children lay out predictably */
+  display: flex;
+  flex-direction: column;
+
+  padding-right: 8px;
 }
 
-/* toolbar pinned */
+/* Keep the toolbar pinned */
 .row{
   flex: 0 0 auto;
 }
+
   </style>
 </head>
 
