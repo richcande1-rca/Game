@@ -409,12 +409,15 @@
       overflow: hidden; /* no page scroll, only inner scroll */
     }
 
-    .game-scroll{
-      flex: 1;
-      min-height: 0;
-      overflow: auto; /* ✅ internal scrolling only if needed */
-      padding-right: 2px; /* tiny room for scrollbar */
-    }
+   .game-scroll{
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.scene{
+  overflow-y: auto;
+}
   </style>
 </head>
 
