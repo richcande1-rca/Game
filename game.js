@@ -634,50 +634,58 @@ return prettyChoiceBase(intent);
   IMAGE: Cloudflare Worker endpoint
 ---------------------------- */
 function ensureSceneImageElement() {
-const sceneEl = document.getElementById("scene");
-if (!sceneEl) return null;
+  // Prefer the fixed mount (new layout)
+  const mount = document.getElementById("sceneImageMount");
+  const sceneEl = document.getElementById("scene"); // fallback anchor
+  const parentForWrap = mount || (sceneEl ? sceneEl.parentNode : null);
 
-let wrap = document.getElementById("sceneImageFrame");
-if (!wrap) {
-wrap = document.createElement("div");
-wrap.id = "sceneImageFrame";
-wrap.className = "frame-wrap";
+  if (!parentForWrap) return null;
 
-// corner ornaments
-const tl = document.createElement("div"); tl.className = "frame-corner tl";
-const tr = document.createElement("div"); tr.className = "frame-corner tr";
-const bl = document.createElement("div"); bl.className = "frame-corner bl";
-const br = document.createElement("div"); br.className = "frame-corner br";
-wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
+  let wrap = document.getElementById("sceneImageFrame");
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "sceneImageFrame";
+    wrap.className = "frame-wrap";
 
-// insert wrapper before scene text
-sceneEl.parentNode.insertBefore(wrap, sceneEl);
-}
+    // corner ornaments
+    const tl = document.createElement("div"); tl.className = "frame-corner tl";
+    const tr = document.createElement("div"); tr.className = "frame-corner tr";
+    const bl = document.createElement("div"); bl.className = "frame-corner bl";
+    const br = document.createElement("div"); br.className = "frame-corner br";
+    wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
 
-let img = document.getElementById("sceneImage");
-if (!img) {
-img = document.createElement("img");
-img.id = "sceneImage";
-img.alt = "Scene illustration";
-img.loading = "lazy";
-     img.classList.remove("is-loaded");
+    // ✅ Insert into fixed mount if it exists, otherwise fallback to before scene text
+    if (mount) {
+      mount.appendChild(wrap);
+    } else if (sceneEl) {
+      sceneEl.parentNode.insertBefore(wrap, sceneEl);
+    } else {
+      parentForWrap.appendChild(wrap);
+    }
+  }
+
+  let img = document.getElementById("sceneImage");
+  if (!img) {
+    img = document.createElement("img");
+    img.id = "sceneImage";
+    img.alt = "Scene illustration";
+    img.loading = "lazy";
+
+    // reset animation class so each new src can fade-in
+    img.classList.remove("is-loaded");
 
     img.onerror = () => { wrap.style.display = "none"; };
-    img.onload  = () => { wrap.style.display = "block"; };
-  img.onerror = () => {
-  wrap.style.display = "none";
-};
 
-img.onload = () => {
-  wrap.style.display = "block";
-  // kick animation (next frame so CSS transition applies)
-  requestAnimationFrame(() => img.classList.add("is-loaded"));
-};
+    img.onload = () => {
+      wrap.style.display = "block";
+      // kick animation (next frame so CSS transition applies)
+      requestAnimationFrame(() => img.classList.add("is-loaded"));
+    };
 
-wrap.appendChild(img);
-}
+    wrap.appendChild(img);
+  }
 
-return img;
+  return img;
 }
 
 function imageUrlForRoom(roomId) {
