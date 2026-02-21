@@ -38,17 +38,23 @@ body{
   max-width: 980px;
   margin: 0 auto;
   padding: 18px;
-  height: 100dvh;
+
+  /* ✅ Chromebook-safe viewport height chain */
+  height: 100vh;     /* fallback */
+  height: 100dvh;    /* modern */
+  min-height: 100vh;
+
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
 /* Stack title + game in the same viewport and fade between them */
-.screen-stack{
+main.screen-stack{
   position: relative;
   flex: 1;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -269,6 +275,7 @@ details#drawer > summary{
   background:#0a0a0a;
   border-bottom:1px solid #151515;
 }
+
 details#drawer > summary::-webkit-details-marker{ display:none; }
 
 pre{
@@ -337,10 +344,11 @@ pre{
   filter: contrast(1.02) saturate(0.95);
 }
 
+/* Hybrid behaviour — no crop on smaller screens */
 @media (max-width:720px){
   .title-img{
     object-fit: contain;
-    background:#060606;
+    background:#060606;  /* clean letterbox */
   }
 }
 
@@ -394,7 +402,7 @@ pre{
   font-size: 12px;
 }
 
-/* --- Game screen layout: panel fills viewport; content scrolls internally if needed --- */
+/* --- Game screen layout: panel fills viewport; content scrolls internally --- */
 #gameUI{
   align-items: stretch;
   justify-content: stretch;
@@ -402,9 +410,10 @@ pre{
 
 #gameUI .panel{
   height: 100%;
+  min-height: 0;       /* ✅ critical flex fix */
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* no page scroll, only inner scroll */
+  overflow: hidden;    /* no page scroll, only inner scroll */
 }
 
 /* pinned image area */
@@ -436,6 +445,7 @@ pre{
 .game-scroll::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(to bottom, #3a0000, #8b0000);
 }
+
 /* Firefox */
 .game-scroll{
   scrollbar-width: thin;
@@ -446,94 +456,96 @@ pre{
 
 <body>
 <div class="wrap">
-<main class="screen-stack">
+  <main class="screen-stack">
 
-  <!-- TITLE SCREEN -->
-  <section id="titleScreen" class="screen is-active" aria-label="Title Screen">
-    <div class="title-card">
-      <img
-        class="title-img"
-        src="assets/opening.webp"
-        alt="Gothic Chronicle Title"
-        fetchpriority="high"
-        decoding="sync"
-      />
-      <div class="title-overlay">
-        <div class="title-logo">Gothic Chronicle</div>
-        <div class="title-sub">A gothic interactive fiction</div>
+    <!-- TITLE SCREEN -->
+    <section id="titleScreen" class="screen is-active" aria-label="Title Screen">
+      <div class="title-card">
+        <img
+          class="title-img"
+          src="assets/opening.webp"
+          alt="Gothic Chronicle Title"
+          fetchpriority="high"
+          decoding="sync"
+        />
+        <div class="title-overlay">
+          <div class="title-logo">Gothic Chronicle</div>
+          <div class="title-sub">A gothic interactive fiction</div>
 
-        <div class="title-actions">
-          <button class="tinybtn titlebtn" id="btnStart" type="button">Begin</button>
-          <button class="tinybtn titlebtn" id="btnContinue" type="button" style="display:none;">Continue</button>
-        </div>
+          <div class="title-actions">
+            <button class="tinybtn titlebtn" id="btnStart" type="button">Begin</button>
+            <button class="tinybtn titlebtn" id="btnContinue" type="button" style="display:none;">Continue</button>
+          </div>
 
-        <div class="title-hint">
-          Press <span class="kbd">Enter</span> to begin
+          <div class="title-hint">
+            Press <span class="kbd">Enter</span> to begin
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- GAME UI -->
-  <section id="gameUI" class="screen" aria-label="Game">
-    <div class="panel">
+    <!-- GAME UI -->
+    <section id="gameUI" class="screen" aria-label="Game">
+      <div class="panel">
 
-      <noscript>
-        <div class="meta" style="margin-top:10px;">
-          This prototype requires JavaScript to run.
+        <noscript>
+          <div class="meta" style="margin-top:10px;">
+            This prototype requires JavaScript to run.
+          </div>
+        </noscript>
+
+        <!-- IMAGE AREA (pinned, never scrolls) -->
+        <div id="sceneImageMount" class="image-zone"></div>
+
+        <!-- SCROLLABLE CONTENT AREA -->
+        <div class="game-scroll" id="gameScroll">
+          <div id="scene" class="scene" aria-live="polite"></div>
+          <div id="meta" class="meta"></div>
+
+          <div class="divider"></div>
+
+          <div class="choices" id="choices"></div>
+
+          <details id="drawer" style="display:none;">
+            <summary id="drawerTitle">Drawer</summary>
+            <pre id="drawerBody"></pre>
+          </details>
         </div>
-      </noscript>
 
-      <!-- IMAGE AREA (pinned, never scrolls) -->
-      <div id="sceneImageMount" class="image-zone"></div>
+        <!-- FIXED CONTROL BAR -->
+        <div class="row">
 
-      <!-- SCROLLABLE CONTENT AREA -->
-      <div class="game-scroll" id="gameScroll">
-        <div id="scene" class="scene" aria-live="polite"></div>
-        <div id="meta" class="meta"></div>
+          <button class="tinybtn" id="btnInv" type="button">Inventory</button>
+          <button class="tinybtn" id="btnChron" type="button">Chronicle</button>
+          <button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
+          <button class="tinybtn" id="btnSave" type="button">Force Save</button>
+          <button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
 
-        <div class="divider"></div>
+          <button class="tinybtn music" id="btnMusic" type="button" aria-label="Toggle background music">
+            Music: Off
+          </button>
 
-        <div class="choices" id="choices"></div>
+          <label class="vol" title="Music volume">
+            <span class="vol-label">Vol</span>
+            <input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
+          </label>
 
-        <details id="drawer" style="display:none;">
-          <summary id="drawerTitle">Drawer</summary>
-          <pre id="drawerBody"></pre>
-        </details>
+          <audio id="bgm" preload="auto" loop>
+            <source src="assets/bgm.mp3" type="audio/mpeg" />
+          </audio>
+
+          <span class="sub">
+            Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
+            <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
+            <span class="kbd">Esc</span> close
+          </span>
+
+        </div>
+
       </div>
+    </section>
 
-      <!-- FIXED CONTROL BAR -->
-      <div class="row">
-        <button class="tinybtn" id="btnInv" type="button">Inventory</button>
-        <button class="tinybtn" id="btnChron" type="button">Chronicle</button>
-        <button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
-        <button class="tinybtn" id="btnSave" type="button">Force Save</button>
-        <button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
-
-        <button class="tinybtn music" id="btnMusic" type="button" aria-label="Toggle background music">
-          Music: Off
-        </button>
-
-        <label class="vol" title="Music volume">
-          <span class="vol-label">Vol</span>
-          <input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
-        </label>
-
-        <audio id="bgm" preload="auto" loop>
-          <source src="assets/bgm.mp3" type="audio/mpeg" />
-        </audio>
-
-        <span class="sub">
-          Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
-          <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
-          <span class="kbd">Esc</span> close
-        </span>
-      </div>
-
-    </div>
-  </section>
-
-</main>
+  </main>
 </div>
 
 <script src="game.js" defer></script>
