@@ -409,16 +409,23 @@
       overflow: hidden; /* no page scroll, only inner scroll */
     }
 
-  .game-scroll{
+ .game-scroll{
   flex: 1;
   min-height: 0;
-  overflow: hidden;   /* keeps page scrollbar gone */
+  overflow: hidden;          /* no big container scrollbar */
+  display: flex;             /* ✅ make children flex items */
+  flex-direction: column;    /* ✅ stack scene/meta/choices */
 }
 
-.scene{
-  flex: 1;            /* ⭐ THIS is the missing piece */
-  min-height: 0;      /* allows shrinking inside flex */
-  overflow-y: auto;   /* only narration scrolls */
+#scene{
+  flex: 1;                   /* ✅ this becomes the scroll region */
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;        /* keep text off scrollbar */
+}
+
+#meta, .divider, #choices, #drawer{
+  flex: 0 0 auto;            /* don't steal height */
 }
   </style>
 </head>
