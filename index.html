@@ -21,6 +21,8 @@
   <style>
     :root { color-scheme: dark; }
 
+    html, body { height: 100%; }
+
     /* --- Base --- */
     body{
       margin:0;
@@ -28,18 +30,50 @@
       color:#e7e7e7;
       font-family: ui-serif, Georgia, "Times New Roman", serif;
       line-height:1.45;
+      overflow: hidden; /* ✅ no page scroll */
     }
 
     /* --- Layout --- */
-    .wrap{ max-width: 980px; margin: 0 auto; padding: 18px; }
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px;
+      height: 100dvh; /* modern viewport height (mobile friendly) */
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+
+    /* Stack title + game in the same viewport and fade between them */
+    .screen-stack{
+      position: relative;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .screen{
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 520ms ease;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .screen.is-active{
+      opacity: 1;
+      pointer-events: auto;
+    }
 
     .panel{
-      margin-top:14px;
       background:#0d0d0d;
       border:1px solid #1e1e1e;
       border-radius:14px;
       padding:14px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+      box-sizing: border-box;
     }
 
     /* --- Victorian Frame for generated scene image --- */
@@ -85,7 +119,7 @@
       opacity: 0.85;
     }
 
-    /* corner ornaments (simple, no extra assets) */
+    /* corner ornaments */
     .frame-corner{
       position:absolute;
       width: 26px;
@@ -102,7 +136,7 @@
     .frame-corner.bl{ bottom: 6px; left: 6px; transform: rotate(270deg); }
     .frame-corner.br{ bottom: 6px; right: 6px; transform: rotate(180deg); }
 
-    /* --- Cinematic image fade-in + frame image styling --- */
+    /* Scene image fade-in */
     #sceneImage{
       display:block;
       width:100%;
@@ -134,7 +168,6 @@
       margin-top: 10px;
     }
 
-    /* subtle separator */
     .divider{
       height:1px;
       background: linear-gradient(to right, transparent, #1e1e1e, transparent);
@@ -195,7 +228,6 @@
       box-shadow: 0 0 0 3px rgba(107,0,0,0.25);
     }
 
-    /* --- Music button --- */
     .tinybtn.music{
       border-color: rgba(107,0,0,0.55);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
@@ -216,7 +248,7 @@
       white-space: nowrap;
     }
 
-    /* --- Drawer (make it feel like an in-game panel) --- */
+    /* Drawer */
     details#drawer{
       margin-top: 12px;
       border: 1px solid #1e1e1e;
@@ -247,7 +279,7 @@
       font-size: 12px;
     }
 
-    /* --- Volume slider --- */
+    /* Volume slider */
     .vol{
       display:flex;
       align-items:center;
@@ -267,42 +299,39 @@
 
     .vol input[type="range"]{
       width: 140px;
-      accent-color: #6b0000; /* subtle blood-red */
+      accent-color: #6b0000;
     }
 
     @media (max-width: 520px){
       .vol input[type="range"]{ width: 120px; }
-    }
-
-    /* --- Small screens --- */
-    @media (max-width: 520px){
       .scene{ font-size: 17px; }
       .panel{ padding: 12px; }
+      .wrap{ padding: 12px; }
     }
 
     /* --- Title Screen --- */
-    .title-screen{
-      margin-top: 14px;
+    #titleScreen{
+      align-items: center;
+      justify-content: center;
     }
 
     .title-card{
-      position: relative;
+      width: 100%;
+      height: 100%;
       border-radius: 14px;
       overflow: hidden;
       border: 1px solid #1e1e1e;
       box-shadow: 0 14px 40px rgba(0,0,0,0.55);
       background: #0b0b0b;
+      position: relative;
     }
 
     .title-img{
       width: 100%;
-      max-width: none;
-      margin: 0;
-      border-radius: 0;
-      border: 0;
-      box-shadow: none;
+      height: 100%;
       display:block;
       object-fit: cover;
+      filter: contrast(1.02) saturate(0.95);
     }
 
     .title-overlay{
@@ -354,17 +383,37 @@
       color:#b8b8b8;
       font-size: 12px;
     }
+
+    /* --- Game screen layout: panel fills viewport; content scrolls internally if needed --- */
+    #gameUI{
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    #gameUI .panel{
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden; /* no page scroll, only inner scroll */
+    }
+
+    .game-scroll{
+      flex: 1;
+      min-height: 0;
+      overflow: auto; /* ✅ internal scrolling only if needed */
+      padding-right: 2px; /* tiny room for scrollbar */
+    }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <main>
+    <main class="screen-stack">
       <!-- TITLE SCREEN -->
-      <section id="titleScreen" class="title-screen" aria-label="Title Screen">
+      <section id="titleScreen" class="screen is-active" aria-label="Title Screen">
         <div class="title-card">
           <img
-            class="opening-img title-img"
+            class="title-img"
             src="assets/opening.webp"
             alt="Gothic Chronicle Title"
             fetchpriority="high"
@@ -386,8 +435,8 @@
         </div>
       </section>
 
-      <!-- GAME UI (hidden until Start/Continue) -->
-      <section id="gameUI" style="display:none;">
+      <!-- GAME UI -->
+      <section id="gameUI" class="screen" aria-label="Game">
         <div class="panel">
           <noscript>
             <div class="meta" style="margin-top:10px;">
@@ -395,15 +444,22 @@
             </div>
           </noscript>
 
-          <!-- Anchor for scene image insertion -->
-          <div id="sceneImageMount"></div>
+          <div class="game-scroll">
+            <!-- Anchor for scene image insertion -->
+            <div id="sceneImageMount"></div>
 
-          <div id="scene" class="scene" aria-live="polite"></div>
-          <div id="meta" class="meta"></div>
+            <div id="scene" class="scene" aria-live="polite"></div>
+            <div id="meta" class="meta"></div>
 
-          <div class="divider"></div>
+            <div class="divider"></div>
 
-          <div class="choices" id="choices"></div>
+            <div class="choices" id="choices"></div>
+
+            <details id="drawer" style="display:none;">
+              <summary id="drawerTitle">Drawer</summary>
+              <pre id="drawerBody"></pre>
+            </details>
+          </div>
 
           <div class="row">
             <button class="tinybtn" id="btnInv" type="button">Inventory</button>
@@ -431,11 +487,6 @@
               <span class="kbd">Esc</span> close
             </span>
           </div>
-
-          <details id="drawer" style="display:none;">
-            <summary id="drawerTitle">Drawer</summary>
-            <pre id="drawerBody"></pre>
-          </details>
         </div>
       </section>
     </main>
