@@ -634,50 +634,41 @@ return prettyChoiceBase(intent);
  IMAGE: Cloudflare Worker endpoint
 ---------------------------- */
 function ensureSceneImageElement() {
-const sceneEl = document.getElementById("scene");
-if (!sceneEl) return null;
+  const mount = document.getElementById("sceneImageMount");
+  if (!mount) return null;
 
-let wrap = document.getElementById("sceneImageFrame");
-if (!wrap) {
-wrap = document.createElement("div");
-wrap.id = "sceneImageFrame";
-wrap.className = "frame-wrap";
+  let wrap = document.getElementById("sceneImageFrame");
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "sceneImageFrame";
+    wrap.className = "frame-wrap";
 
-// corner ornaments
-const tl = document.createElement("div"); tl.className = "frame-corner tl";
-const tr = document.createElement("div"); tr.className = "frame-corner tr";
-const bl = document.createElement("div"); bl.className = "frame-corner bl";
-const br = document.createElement("div"); br.className = "frame-corner br";
-wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
+    const tl = document.createElement("div"); tl.className = "frame-corner tl";
+    const tr = document.createElement("div"); tr.className = "frame-corner tr";
+    const bl = document.createElement("div"); bl.className = "frame-corner bl";
+    const br = document.createElement("div"); br.className = "frame-corner br";
+    wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
 
-// insert wrapper before scene text
-sceneEl.parentNode.insertBefore(wrap, sceneEl);
-}
+    mount.appendChild(wrap);
+  }
 
-let img = document.getElementById("sceneImage");
-if (!img) {
-img = document.createElement("img");
-img.id = "sceneImage";
-img.alt = "Scene illustration";
-img.loading = "lazy";
-img.classList.remove("is-loaded");
+  let img = document.getElementById("sceneImage");
+  if (!img) {
+    img = document.createElement("img");
+    img.id = "sceneImage";
+    img.alt = "Scene illustration";
+    img.loading = "lazy";
 
-img.onerror = () => { wrap.style.display = "none"; };
-img.onload  = () => { wrap.style.display = "block"; };
-img.onerror = () => {
-wrap.style.display = "none";
-};
+    img.onerror = () => { wrap.style.display = "none"; };
+    img.onload  = () => {
+      wrap.style.display = "block";
+      requestAnimationFrame(() => img.classList.add("is-loaded"));
+    };
 
-img.onload = () => {
-wrap.style.display = "block";
-// kick animation (next frame so CSS transition applies)
-requestAnimationFrame(() => img.classList.add("is-loaded"));
-};
+    wrap.appendChild(img);
+  }
 
-wrap.appendChild(img);
-}
-
-return img;
+  return img;
 }
 
 function imageUrlForRoom(roomId) {
