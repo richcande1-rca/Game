@@ -15,13 +15,11 @@
 <!-- Google font -->
 <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap" rel="stylesheet" />
 
-<!-- Preload hero/title image -->
-<link rel="preload" as="image" href="assets/opening.webp" fetchpriority="high" />
+  <!-- Preload hero/title image -->
+  <link rel="preload" as="image" href="assets/opening.webp" fetchpriority="high" />
 
 <style>
 :root { color-scheme: dark; }
-
-html, body { height: 100%; }
 
 /* --- Base --- */
 body{
@@ -30,51 +28,60 @@ background:#060606;
 color:#e7e7e7;
 font-family: ui-serif, Georgia, "Times New Roman", serif;
 line-height:1.45;
-overflow: hidden; /* ✅ no page scroll */
 }
 
 /* --- Layout --- */
-.wrap{
-max-width: 980px;
-margin: 0 auto;
-padding: 18px;
-height: 100dvh; /* modern viewport height (mobile friendly) */
-display: flex;
-flex-direction: column;
-box-sizing: border-box;
-}
-
-/* Stack title + game in the same viewport and fade between them */
-.screen-stack{
-position: relative;
-flex: 1;
-min-height: 0;
-}
-
-.screen{
-position: absolute;
-inset: 0;
-opacity: 0;
-pointer-events: none;
-transition: opacity 520ms ease;
-display: flex;
-flex-direction: column;
-min-height: 0;
-}
-
-.screen.is-active{
-opacity: 1;
-pointer-events: auto;
-}
+.wrap{ max-width: 980px; margin: 0 auto; padding: 18px; }
+    header{ display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
+    header h1{ margin:0; font-size: 22px; letter-spacing: 0.5px; }
+    header .sub{ color:#b8b8b8; font-size: 13px; }
 
 .panel{
+margin-top:14px;
 background:#0d0d0d;
 border:1px solid #1e1e1e;
 border-radius:14px;
 padding:14px;
 box-shadow: 0 8px 20px rgba(0,0,0,0.35);
-box-sizing: border-box;
 }
+
+    /* --- Hero / Opening --- */
+    .opening-wrap{
+      position: relative;
+      margin-top: 12px;
+    }
+
+    /* center the opening image reliably */
+    .opening-img{
+      width: min(520px, 92vw);
+      display:block;
+      margin: 0 auto 10px auto;
+      border-radius:14px;
+      border:1px solid #1e1e1e;
+      box-shadow:0 8px 20px rgba(0,0,0,0.35);
+      object-fit:cover;
+      object-position:center;
+    }
+
+    .opening-title{
+      position:absolute;
+      left:50%;
+      top:20%;
+      transform: translateX(-50%);
+      font-family: "UnifrakturCook", cursive;
+      font-size: clamp(34px, 6vw, 64px);
+      letter-spacing: 2px;
+      color:#6b0000;
+      text-shadow:
+        0 0 6px rgba(255,255,255,0.15),
+        0 0 14px rgba(0,0,0,0.9),
+        0 3px 10px rgba(0,0,0,0.95),
+        0 0 12px rgba(120,0,0,0.7);
+      pointer-events:none;
+      user-select:none;
+      text-align:center;
+      white-space:nowrap;
+    }
 
 /* --- Victorian Frame for generated scene image --- */
 .frame-wrap{
@@ -119,7 +126,7 @@ mix-blend-mode: overlay;
 opacity: 0.85;
 }
 
-/* corner ornaments */
+/* corner ornaments (simple, no extra assets) */
 .frame-corner{
 position:absolute;
 width: 26px;
@@ -136,7 +143,7 @@ opacity: 0.85;
 .frame-corner.bl{ bottom: 6px; left: 6px; transform: rotate(270deg); }
 .frame-corner.br{ bottom: 6px; right: 6px; transform: rotate(180deg); }
 
-/* Scene image fade-in */
+/* --- Cinematic image fade-in + frame image styling --- */
 #sceneImage{
 display:block;
 width:100%;
@@ -150,6 +157,7 @@ transform: scale(0.985);
 transition: opacity 650ms ease, transform 650ms ease;
 will-change: opacity, transform;
 }
+
 #sceneImage.is-loaded{
 opacity: 1;
 transform: scale(1);
@@ -168,6 +176,7 @@ font-size: 13px;
 margin-top: 10px;
 }
 
+/* subtle separator */
 .divider{
 height:1px;
 background: linear-gradient(to right, transparent, #1e1e1e, transparent);
@@ -228,6 +237,7 @@ border-color:#6b0000;
 box-shadow: 0 0 0 3px rgba(107,0,0,0.25);
 }
 
+/* --- Music button --- */
 .tinybtn.music{
 border-color: rgba(107,0,0,0.55);
 box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
@@ -248,7 +258,7 @@ background:#0a0a0a;
 white-space: nowrap;
 }
 
-/* Drawer */
+/* --- Drawer (make it feel like an in-game panel) --- */
 details#drawer{
 margin-top: 12px;
 border: 1px solid #1e1e1e;
@@ -279,7 +289,7 @@ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 font-size: 12px;
 }
 
-/* Volume slider */
+/* --- Volume slider --- */
 .vol{
 display:flex;
 align-items:center;
@@ -299,235 +309,241 @@ user-select:none;
 
 .vol input[type="range"]{
 width: 140px;
-accent-color: #6b0000;
+accent-color: #6b0000; /* subtle blood-red */
 }
 
 @media (max-width: 520px){
 .vol input[type="range"]{ width: 120px; }
+}
+
+    /* --- Footer note panel --- */
+    .footnote{
+      color:#b8b8b8;
+      font-size: 13px;
+    }
+
+/* --- Small screens --- */
+@media (max-width: 520px){
+      header h1{ font-size: 20px; }
 .scene{ font-size: 17px; }
 .panel{ padding: 12px; }
-.wrap{ padding: 12px; }
 }
 
-/* --- Title Screen --- */
-#titleScreen{
-align-items: center;
-justify-content: center;
-}
+    /* --- Title Screen --- */
+    .title-screen{
+      margin-top: 14px;
+    }
 
-.title-card{
-width: 100%;
-height: 100%;
-border-radius: 14px;
-overflow: hidden;
-border: 1px solid #1e1e1e;
-box-shadow: 0 14px 40px rgba(0,0,0,0.55);
-background: #0b0b0b;
-position: relative;
-}
+    .title-card{
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid #1e1e1e;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.55);
+      background: #0b0b0b;
+    }
 
-.title-img{
-width:100%;
-height:100%;
-display:block;
+    .title-img{
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      border-radius: 0;
+      border: 0;
+      box-shadow: none;
+      display:block;
+      object-fit: cover;
+    }
 
-/* Desktop cinematic fill */
-object-fit: cover;
-object-position: center top;   /* prevents important top area cropping */
+    .title-overlay{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      padding: 18px;
+      background:
+        radial-gradient(120% 90% at 50% 20%, rgba(0,0,0,0.15), rgba(0,0,0,0.80)),
+        linear-gradient(to top, rgba(0,0,0,0.88), rgba(0,0,0,0.20) 60%, rgba(0,0,0,0.10));
+    }
 
-filter: contrast(1.02) saturate(0.95);
-}
+    .title-logo{
+      font-family: "UnifrakturCook", cursive;
+      font-size: clamp(42px, 6.5vw, 82px);
+      letter-spacing: 2px;
+      color:#6b0000;
+      text-shadow:
+        0 0 6px rgba(255,255,255,0.12),
+        0 0 14px rgba(0,0,0,0.9),
+        0 4px 14px rgba(0,0,0,0.95),
+        0 0 14px rgba(120,0,0,0.7);
+      line-height: 1.0;
+    }
 
-/* Hybrid behaviour — no crop on smaller screens */
-@media (max-width:720px){
-.title-img{
-object-fit: contain;
-background:#060606;  /* clean letterbox */
-}
-}
+    .title-sub{
+      margin-top: 6px;
+      color:#c6c6c6;
+      font-size: 13px;
+      letter-spacing: 0.4px;
+    }
 
-.title-overlay{
-position:absolute;
-inset: 0;
-display:flex;
-flex-direction:column;
-justify-content:flex-end;
-padding: 18px;
-background:
-radial-gradient(120% 90% at 50% 20%, rgba(0,0,0,0.15), rgba(0,0,0,0.80)),
-linear-gradient(to top, rgba(0,0,0,0.88), rgba(0,0,0,0.20) 60%, rgba(0,0,0,0.10));
-}
+    .title-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 14px;
+    }
 
-.title-logo{
-font-family: "UnifrakturCook", cursive;
-font-size: clamp(42px, 6.5vw, 82px);
-letter-spacing: 2px;
-color:#6b0000;
-text-shadow:
-0 0 6px rgba(255,255,255,0.12),
-0 0 14px rgba(0,0,0,0.9),
-0 4px 14px rgba(0,0,0,0.95),
-0 0 14px rgba(120,0,0,0.7);
-line-height: 1.0;
-}
+    .titlebtn{
+      padding: 10px 14px;
+      border-radius: 12px;
+    }
 
-.title-sub{
-margin-top: 6px;
-color:#c6c6c6;
-font-size: 13px;
-letter-spacing: 0.4px;
-}
-
-.title-actions{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-margin-top: 14px;
-}
-
-.titlebtn{
-padding: 10px 14px;
-border-radius: 12px;
-}
-
-.title-hint{
-margin-top: 12px;
-color:#b8b8b8;
-font-size: 12px;
-}
-
-/* --- Game screen layout: panel fills viewport; content scrolls internally if needed --- */
-#gameUI{
-align-items: stretch;
-justify-content: stretch;
-}
-
-#gameUI .panel{
-height: 100%;
-display: flex;
-flex-direction: column;
-overflow: hidden; /* no page scroll, only inner scroll */
-}
-
- .game-scroll{
-.game-scroll{
-flex: 1;
-min-height: 0;
-  overflow: hidden;          /* no big container scrollbar */
-  display: flex;             /* ✅ make children flex items */
-  flex-direction: column;    /* ✅ stack scene/meta/choices */
-  overflow-y: auto;     /* ✅ this becomes the main scrollbar */
-  overflow-x: hidden;
-}
-
-#scene{
-  flex: 1;                   /* ✅ this becomes the scroll region */
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 6px;        /* keep text off scrollbar */
-  flex: 0 0 auto;       /* ✅ let it size naturally */
-  min-height: auto;
-  overflow: visible;    /* ✅ no inner scrollbar */
-  padding-right: 0;
-}
-
-#meta, .divider, #choices, #drawer{
-flex: 0 0 auto;            /* don't steal height */
-}
-    #choices{
-  max-height: 34vh;
-  overflow-y: auto;
-   #choices{
-  max-height: none;
-  overflow: visible;
-}
+    .title-hint{
+      margin-top: 12px;
+      color:#b8b8b8;
+      font-size: 12px;
+    }
 </style>
 </head>
 
 <body>
 <div class="wrap">
-<main class="screen-stack">
-<!-- TITLE SCREEN -->
-<section id="titleScreen" class="screen is-active" aria-label="Title Screen">
-<div class="title-card">
+   
+
+<main>
+      <!-- MAIN GAME PANEL -->
+      <div class="panel">
+        <div class="opening-wrap" aria-hidden="true">
+      <!-- TITLE SCREEN -->
+      <section id="titleScreen" class="title-screen" aria-label="Title Screen">
+        <div class="title-card">
 <img
-class="title-img"
+            class="opening-img"
+            class="opening-img title-img"
 src="assets/opening.webp"
-alt="Gothic Chronicle Title"
-fetchpriority="high"
-decoding="sync"
+            alt="Gothic Chronicle Opening"
+            alt="Gothic Chronicle Title"
+            fetchpriority="high"
+            decoding="sync"
 />
-<div class="title-overlay">
-<div class="title-logo">Gothic Chronicle</div>
-<div class="title-sub">A gothic interactive fiction</div>
+          <div class="opening-title">Gothic Chronicle</div>
+          <div class="title-overlay">
+            <div class="title-logo">Gothic Chronicle</div>
+            <div class="title-sub">A gothic interactive fiction</div>
 
-<div class="title-actions">
-<button class="tinybtn titlebtn" id="btnStart" type="button">Begin</button>
-<button class="tinybtn titlebtn" id="btnContinue" type="button" style="display:none;">Continue</button>
+            <div class="title-actions">
+              <button class="tinybtn titlebtn" id="btnStart" type="button">Begin</button>
+              <button class="tinybtn titlebtn" id="btnContinue" type="button" style="display:none;">Continue</button>
+            </div>
+
+            <div class="title-hint">
+              Press <span class="kbd">Enter</span> to begin
+            </div>
+          </div>
 </div>
 
-<div class="title-hint">
-Press <span class="kbd">Enter</span> to begin
+        <noscript>
+          <div class="meta" style="margin-top:10px;">
+            This prototype requires JavaScript to run.
+      </section>
+
+      <!-- GAME UI (hidden until Start/Continue) -->
+      <section id="gameUI" style="display:none;">
+        <div class="panel">
+          <noscript>
+            <div class="meta" style="margin-top:10px;">
+              This prototype requires JavaScript to run.
+            </div>
+          </noscript>
+
+          <!-- Anchor for scene image insertion -->
+          <div id="sceneImageMount"></div>
+
+          <div id="scene" class="scene" aria-live="polite"></div>
+          <div id="meta" class="meta"></div>
+
+          <div class="divider"></div>
+
+          <div class="choices" id="choices"></div>
+
+          <div class="row">
+            <button class="tinybtn" id="btnInv" type="button">Inventory</button>
+            <button class="tinybtn" id="btnChron" type="button">Chronicle</button>
+            <button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
+            <button class="tinybtn" id="btnSave" type="button">Force Save</button>
+            <button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
+
+            <button class="tinybtn music" id="btnMusic" type="button" aria-label="Toggle background music">
+              Music: Off
+            </button>
+
+            <label class="vol" title="Music volume">
+              <span class="vol-label">Vol</span>
+              <input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
+            </label>
+
+            <audio id="bgm" preload="auto" loop>
+              <source src="assets/bgm.mp3" type="audio/mpeg" />
+            </audio>
+
+            <span class="sub">
+              Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
+              <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
+              <span class="kbd">Esc</span> close
+            </span>
 </div>
+        </noscript>
+
+        <!-- Optional anchor for scene image insertion (game.js may also insert relative to #scene) -->
+        <div id="sceneImageMount"></div>
+
+        <div id="scene" class="scene" aria-live="polite"></div>
+        <div id="meta" class="meta"></div>
+
+        <div class="divider"></div>
+
+        <div class="choices" id="choices"></div>
+
+        <div class="row">
+          <button class="tinybtn" id="btnInv" type="button">Inventory</button>
+          <button class="tinybtn" id="btnChron" type="button">Chronicle</button>
+          <button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
+          <button class="tinybtn" id="btnSave" type="button">Force Save</button>
+          <button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
+
+          <button class="tinybtn music" id="btnMusic" type="button" aria-label="Toggle background music">
+            Music: Off
+          </button>
+
+          <label class="vol" title="Music volume">
+            <span class="vol-label">Vol</span>
+            <input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
+          </label>
+
+          <audio id="bgm" preload="auto" loop>
+            <source src="assets/bgm.mp3" type="audio/mpeg" />
+          </audio>
+
+          <span class="sub">
+            Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
+            <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
+            <span class="kbd">Esc</span> close
+          </span>
+          <details id="drawer" style="display:none;">
+            <summary id="drawerTitle">Drawer</summary>
+            <pre id="drawerBody"></pre>
+          </details>
 </div>
-</div>
-</section>
 
-<!-- GAME UI -->
-<section id="gameUI" class="screen" aria-label="Game">
-<div class="panel">
-<noscript>
-<div class="meta" style="margin-top:10px;">
-This prototype requires JavaScript to run.
-</div>
-</noscript>
-
-<div class="game-scroll">
-<!-- Anchor for scene image insertion -->
-<div id="sceneImageMount"></div>
-
-<div id="scene" class="scene" aria-live="polite"></div>
-<div id="meta" class="meta"></div>
-
-<div class="divider"></div>
-
-<div class="choices" id="choices"></div>
-
-<details id="drawer" style="display:none;">
-<summary id="drawerTitle">Drawer</summary>
-<pre id="drawerBody"></pre>
-</details>
-</div>
-
-<div class="row">
-<button class="tinybtn" id="btnInv" type="button">Inventory</button>
-<button class="tinybtn" id="btnChron" type="button">Chronicle</button>
-<button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
-<button class="tinybtn" id="btnSave" type="button">Force Save</button>
-<button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
-
-<button class="tinybtn music" id="btnMusic" type="button" aria-label="Toggle background music">
-Music: Off
-</button>
-
-<label class="vol" title="Music volume">
-<span class="vol-label">Vol</span>
-<input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
-</label>
-
-<audio id="bgm" preload="auto" loop>
-<source src="assets/bgm.mp3" type="audio/mpeg" />
-</audio>
-
-<span class="sub">
-Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
-<span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
-<span class="kbd">Esc</span> close
-</span>
-</div>
-</div>
-</section>
+        <details id="drawer" style="display:none;">
+          <summary id="drawerTitle">Drawer</summary>
+          <pre id="drawerBody"></pre>
+        </details>
+      </div>
+      </section>
 </main>
+
+   
 </div>
 
 <script src="game.js" defer></script>
