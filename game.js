@@ -1154,23 +1154,21 @@ function showGame(fromContinue = false) {
   const title = document.getElementById("titleScreen");
   const game  = document.getElementById("gameUI");
 
-  // Switch screens using your CSS system
+  // Switch screens using the CSS system (.is-active)
   if (title) title.classList.remove("is-active");
   if (game)  game.classList.add("is-active");
 
-  // If Begin → start fresh
+  // Begin = start fresh
   if (!fromContinue) {
     localStorage.removeItem(SAVE_KEY);
     localStorage.removeItem(OVERLAY_KEY);
     STATE = defaultState();
     OVERLAY = null;
+  } else {
+    // Continue: reload from storage in case it changed
+    STATE = loadState();
+    OVERLAY = loadOverlay();
   }
-
-  render();
-
-  // kick music after valid user gesture
-  if (window.gcMusicKick) window.gcMusicKick();
-}
 
   render();
 
@@ -1182,20 +1180,25 @@ function showGame(fromContinue = false) {
   const btnStart = document.getElementById("btnStart");
   const btnCont  = document.getElementById("btnContinue");
 
-  const hasSave = !!localStorage.getItem(SAVE_KEY);
-  if (btnCont && hasSave) btnCont.style.display = "";
+  function refreshContinueVisibility() {
+    const hasSaveNow = !!localStorage.getItem(SAVE_KEY);
+    if (btnCont) btnCont.style.display = hasSaveNow ? "" : "none";
+    return hasSaveNow;
+  }
 
-  if (btnStart) btnStart.onclick = () => showGame(false);
-  if (btnCont)  btnCont.onclick  = () => showGame(true);
+  refreshContinueVisibility();
 
-  // Press Enter to begin
+  if (btnStart) btnStart.addEventListener("click", () => showGame(false));
+  if (btnCont)  btnCont.addEventListener("click", () => showGame(true));
+
+  // Press Enter to begin/continue (don’t use {once:true} so it works reliably)
   window.addEventListener("keydown", (e) => {
     if (e.repeat) return;
-    if (e.key === "Enter") {
-      if (hasSave) showGame(true);
-      else showGame(false);
-    }
-  }, { once: true });
+    if (e.key !== "Enter") return;
+
+    const hasSaveNow = refreshContinueVisibility();
+    showGame(hasSaveNow); // continue if save exists, else begin
+  });
 })();
 
 // Handy in console:
