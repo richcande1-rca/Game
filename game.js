@@ -660,24 +660,71 @@ img = document.createElement("img");
 img.id = "sceneImage";
 img.alt = "Scene illustration";
 img.loading = "lazy";
-img.classList.remove("is-loaded");
+     img.classList.remove("is-loaded");
+  // Prefer the fixed mount (new layout)
+  const mount = document.getElementById("sceneImageMount");
+  const sceneEl = document.getElementById("scene"); // fallback anchor
+  const parentForWrap = mount || (sceneEl ? sceneEl.parentNode : null);
+
+  if (!parentForWrap) return null;
+
+  let wrap = document.getElementById("sceneImageFrame");
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "sceneImageFrame";
+    wrap.className = "frame-wrap";
+
+    // corner ornaments
+    const tl = document.createElement("div"); tl.className = "frame-corner tl";
+    const tr = document.createElement("div"); tr.className = "frame-corner tr";
+    const bl = document.createElement("div"); bl.className = "frame-corner bl";
+    const br = document.createElement("div"); br.className = "frame-corner br";
+    wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
+
+    // ✅ Insert into fixed mount if it exists, otherwise fallback to before scene text
+    if (mount) {
+      mount.appendChild(wrap);
+    } else if (sceneEl) {
+      sceneEl.parentNode.insertBefore(wrap, sceneEl);
+    } else {
+      parentForWrap.appendChild(wrap);
+    }
+  }
+
+  let img = document.getElementById("sceneImage");
+  if (!img) {
+    img = document.createElement("img");
+    img.id = "sceneImage";
+    img.alt = "Scene illustration";
+    img.loading = "lazy";
+
+    // reset animation class so each new src can fade-in
+    img.classList.remove("is-loaded");
 
 img.onerror = () => { wrap.style.display = "none"; };
-img.onload  = () => { wrap.style.display = "block"; };
-img.onerror = () => {
-wrap.style.display = "none";
+    img.onload  = () => { wrap.style.display = "block"; };
+  img.onerror = () => {
+  wrap.style.display = "none";
 };
 
 img.onload = () => {
-wrap.style.display = "block";
-// kick animation (next frame so CSS transition applies)
-requestAnimationFrame(() => img.classList.add("is-loaded"));
+  wrap.style.display = "block";
+  // kick animation (next frame so CSS transition applies)
+  requestAnimationFrame(() => img.classList.add("is-loaded"));
 };
+    img.onload = () => {
+      wrap.style.display = "block";
+      // kick animation (next frame so CSS transition applies)
+      requestAnimationFrame(() => img.classList.add("is-loaded"));
+    };
 
 wrap.appendChild(img);
 }
+    wrap.appendChild(img);
+  }
 
 return img;
+  return img;
 }
 
 function imageUrlForRoom(roomId) {
@@ -1145,19 +1192,15 @@ window.addEventListener("keydown", firstKick, { once: true });
 
 
 /* ---------------------------
-  BOOT
-  BOOT  (replace your old BOOT block with this)
+ BOOT  (replace your old BOOT block with this)
 ---------------------------- */
 bindButtons();
 
-function showGame(fromContinue = false) {
 function fadeToScreen(fromContinue = false) {
 const title = document.getElementById("titleScreen");
 const game  = document.getElementById("gameUI");
 
-  if (title) title.style.display = "none";
-  if (game)  game.style.display  = "block";
-  if (!title || !game) return;
+if (!title || !game) return;
 
 // If Begin → start fresh
 if (!fromContinue) {
@@ -1167,18 +1210,15 @@ STATE = defaultState();
 OVERLAY = null;
 }
 
-  render();
-  // Fade: title -> game
-  game.classList.add("is-active");
-  title.classList.remove("is-active");
+// Fade: title -> game
+game.classList.add("is-active");
+title.classList.remove("is-active");
 
-  // kick music after valid user gesture
-  if (window.gcMusicKick) window.gcMusicKick();
-  // Render once the game is becoming visible (next frame so layout is ready)
-  requestAnimationFrame(() => {
-    render();
-    if (window.gcMusicKick) window.gcMusicKick(); // gesture-safe kick
-  });
+// Render once the game is becoming visible (next frame so layout is ready)
+requestAnimationFrame(() => {
+render();
+if (window.gcMusicKick) window.gcMusicKick(); // gesture-safe kick
+});
 }
 
 (function initTitleScreen() {
@@ -1188,20 +1228,15 @@ const btnCont  = document.getElementById("btnContinue");
 const hasSave = !!localStorage.getItem(SAVE_KEY);
 if (btnCont && hasSave) btnCont.style.display = "";
 
-  if (btnStart) btnStart.onclick = () => showGame(false);
-  if (btnCont)  btnCont.onclick  = () => showGame(true);
-  if (btnStart) btnStart.onclick = () => fadeToScreen(false);
-  if (btnCont)  btnCont.onclick  = () => fadeToScreen(true);
+if (btnStart) btnStart.onclick = () => fadeToScreen(false);
+if (btnCont)  btnCont.onclick  = () => fadeToScreen(true);
 
-  // Press Enter to begin
-  // Press Enter to begin (Continue if save exists)
+// Press Enter to begin (Continue if save exists)
 window.addEventListener("keydown", (e) => {
 if (e.repeat) return;
 if (e.key === "Enter") {
-      if (hasSave) showGame(true);
-      else showGame(false);
-      if (hasSave) fadeToScreen(true);
-      else fadeToScreen(false);
+if (hasSave) fadeToScreen(true);
+else fadeToScreen(false);
 }
 }, { once: true });
 })();
