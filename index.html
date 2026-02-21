@@ -8,14 +8,10 @@
 <meta name="theme-color" content="#060606" />
 <link rel="icon" href="assets/favicon.png" />
 
-<!-- PRECONNECT (reduces font flash) -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-<!-- Google font -->
 <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap" rel="stylesheet" />
-
-<!-- Preload hero/title image -->
 <link rel="preload" as="image" href="assets/opening.webp" fetchpriority="high" />
 
 <style>
@@ -23,57 +19,38 @@
 
 html, body { height: 100%; }
 
-/* --- Base --- */
 body{
   margin:0;
   background:#060606;
   color:#e7e7e7;
   font-family: ui-serif, Georgia, "Times New Roman", serif;
   line-height:1.45;
-  overflow: hidden; /* ✅ no page scroll */
+
+  /* ✅ revert to normal scrolling */
+  overflow: auto;
 }
 
-/* --- Layout --- */
+/* Simple centered layout */
 .wrap{
   max-width: 980px;
   margin: 0 auto;
   padding: 18px;
-
-  /* ✅ Chromebook-safe viewport height chain */
-  height: 100vh;     /* fallback */
-  height: 100dvh;    /* modern */
-  min-height: 100vh;
-
-  display: flex;
-  flex-direction: column;
   box-sizing: border-box;
 }
 
-/* Stack title + game in the same viewport and fade between them */
-main.screen-stack{
+/* Stack title + game and fade between them */
+.screen-stack{
   position: relative;
-  flex: 1;
-  min-height: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
+/* In “full page scroll” mode, we don't need absolute layering.
+   We simply hide/show screens with display. */
 .screen{
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 520ms ease;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: 100%;
+  display: none;
 }
 
 .screen.is-active{
-  opacity: 1;
-  pointer-events: auto;
+  display: block;
 }
 
 .panel{
@@ -92,7 +69,7 @@ main.screen-stack{
   margin: 12px auto 14px auto;
   position: relative;
   border-radius: 16px;
-  padding: 16px;                 /* thickness of frame */
+  padding: 16px;
   background:
     radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,0.06), transparent 55%),
     linear-gradient(135deg, #2a1b0d, #0f0b07 45%, #2a1b0d);
@@ -102,7 +79,6 @@ main.screen-stack{
     inset 0 0 0 1px rgba(255,255,255,0.04);
 }
 
-/* inner bevel */
 .frame-wrap::before{
   content:"";
   position:absolute;
@@ -114,7 +90,6 @@ main.screen-stack{
     inset 0 0 22px rgba(0,0,0,0.65);
 }
 
-/* subtle “aged paper” vignette over image */
 .frame-wrap::after{
   content:"";
   position:absolute;
@@ -128,7 +103,6 @@ main.screen-stack{
   opacity: 0.85;
 }
 
-/* corner ornaments */
 .frame-corner{
   position:absolute;
   width: 26px;
@@ -145,7 +119,6 @@ main.screen-stack{
 .frame-corner.bl{ bottom: 6px; left: 6px; transform: rotate(270deg); }
 .frame-corner.br{ bottom: 6px; right: 6px; transform: rotate(180deg); }
 
-/* Scene image fade-in */
 #sceneImage{
   display:block;
   width:100%;
@@ -164,7 +137,7 @@ main.screen-stack{
   transform: scale(1);
 }
 
-/* --- Text blocks --- */
+/* Text */
 .scene{
   font-size: 18px;
   line-height: 1.55;
@@ -183,7 +156,7 @@ main.screen-stack{
   margin: 12px 0 10px 0;
 }
 
-/* --- Choices --- */
+/* Choices */
 .choices{
   margin-top: 12px;
   display:grid;
@@ -211,7 +184,7 @@ button.choice:focus-visible{
   box-shadow: 0 0 0 3px rgba(107,0,0,0.25);
 }
 
-/* --- Toolbar --- */
+/* Toolbar */
 .row{
   display:flex;
   gap:10px;
@@ -275,7 +248,6 @@ details#drawer > summary{
   background:#0a0a0a;
   border-bottom:1px solid #151515;
 }
-
 details#drawer > summary::-webkit-details-marker{ display:none; }
 
 pre{
@@ -288,7 +260,7 @@ pre{
   font-size: 12px;
 }
 
-/* Volume slider */
+/* Volume */
 .vol{
   display:flex;
   align-items:center;
@@ -299,34 +271,19 @@ pre{
   background:#0a0a0a;
   color:#bdbdbd;
 }
-
 .vol-label{
   font-size: 12px;
   color:#bdbdbd;
   user-select:none;
 }
-
 .vol input[type="range"]{
   width: 140px;
   accent-color: #6b0000;
 }
 
-@media (max-width: 520px){
-  .vol input[type="range"]{ width: 120px; }
-  .scene{ font-size: 17px; }
-  .panel{ padding: 12px; }
-  .wrap{ padding: 12px; }
-}
-
-/* --- Title Screen --- */
-#titleScreen{
-  align-items: center;
-  justify-content: center;
-}
-
+/* Title Screen */
 .title-card{
   width: 100%;
-  height: 100%;
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid #1e1e1e;
@@ -337,19 +294,11 @@ pre{
 
 .title-img{
   width:100%;
-  height:100%;
+  height:auto;
   display:block;
   object-fit: cover;
   object-position: center top;
   filter: contrast(1.02) saturate(0.95);
-}
-
-/* Hybrid behaviour — no crop on smaller screens */
-@media (max-width:720px){
-  .title-img{
-    object-fit: contain;
-    background:#060606;  /* clean letterbox */
-  }
 }
 
 .title-overlay{
@@ -402,54 +351,11 @@ pre{
   font-size: 12px;
 }
 
-/* --- Game screen layout: panel fills viewport; content scrolls internally --- */
-#gameUI{
-  align-items: stretch;
-  justify-content: stretch;
-}
-
-#gameUI .panel{
-  height: 100%;
-  min-height: 0;       /* ✅ critical flex fix */
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;    /* no page scroll, only inner scroll */
-}
-
-/* pinned image area */
-#sceneImageMount{
-  flex: 0 0 auto;
-}
-
-/* ✅ the ONE scroll region */
-.game-scroll{
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ==========================
-   Custom Scrollbar (Gothic)
-========================== */
-.game-scroll::-webkit-scrollbar { width: 10px; }
-.game-scroll::-webkit-scrollbar-track {
-  background: #0a0a0a;
-  border-left: 1px solid #1e1e1e;
-}
-.game-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #2a0000, #6b0000);
-  border-radius: 8px;
-  border: 2px solid #0a0a0a;
-}
-.game-scroll::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #3a0000, #8b0000);
-}
-
-/* Firefox */
-.game-scroll{
-  scrollbar-width: thin;
-  scrollbar-color: #6b0000 #0a0a0a;
+@media (max-width: 520px){
+  .vol input[type="range"]{ width: 120px; }
+  .scene{ font-size: 17px; }
+  .panel{ padding: 12px; }
+  .wrap{ padding: 12px; }
 }
 </style>
 </head>
@@ -494,25 +400,22 @@ pre{
           </div>
         </noscript>
 
-        <!-- IMAGE AREA (pinned, never scrolls) -->
+        <!-- Scene image mount (scrolls with page now) -->
         <div id="sceneImageMount" class="image-zone"></div>
 
-        <!-- SCROLLABLE CONTENT AREA -->
-        <div class="game-scroll" id="gameScroll">
-          <div id="scene" class="scene" aria-live="polite"></div>
-          <div id="meta" class="meta"></div>
+        <div id="scene" class="scene" aria-live="polite"></div>
+        <div id="meta" class="meta"></div>
 
-          <div class="divider"></div>
+        <div class="divider"></div>
 
-          <div class="choices" id="choices"></div>
+        <div class="choices" id="choices"></div>
 
-          <details id="drawer" style="display:none;">
-            <summary id="drawerTitle">Drawer</summary>
-            <pre id="drawerBody"></pre>
-          </details>
-        </div>
+        <details id="drawer" style="display:none;">
+          <summary id="drawerTitle">Drawer</summary>
+          <pre id="drawerBody"></pre>
+        </details>
 
-        <!-- FIXED CONTROL BAR -->
+        <!-- Control bar (scrolls with page now) -->
         <div class="row">
 
           <button class="tinybtn" id="btnInv" type="button">Inventory</button>
