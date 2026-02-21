@@ -396,39 +396,32 @@
       font-size: 12px;
     }
 
-    /* --- Game screen layout: panel fills viewport; content scrolls internally if needed --- */
-    #gameUI{
-      align-items: stretch;
-      justify-content: stretch;
-    }
-
-    #gameUI .panel{
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden; /* no page scroll, only inner scroll */
-    }
-
-.game-scroll{
-  flex: 1;
+ /* panel fills viewport; image + scroll area + toolbar */
+#gameUI .panel{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   min-height: 0;
-  overflow-y: auto;     /* ✅ this becomes the main scrollbar */
+}
+
+/* fixed image area */
+#sceneImageMount{
+  flex: 0 0 auto;
+}
+
+/* only this area scrolls */
+.ui-scroll{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   overflow-x: hidden;
+  padding-right: 6px;
 }
 
-#scene{
-  flex: 0 0 auto;       /* ✅ let it size naturally */
-  min-height: auto;
-  overflow: visible;    /* ✅ no inner scrollbar */
-  padding-right: 0;
-}
-
-#meta, .divider, #choices, #drawer{
-  flex: 0 0 auto;            /* don't steal height */
-}
-   #choices{
-  max-height: none;
-  overflow: visible;
+/* toolbar pinned */
+.row{
+  flex: 0 0 auto;
 }
   </style>
 </head>
