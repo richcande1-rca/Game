@@ -494,18 +494,21 @@ Press <span class="kbd">Enter</span> to begin
 
 <!-- GAME UI -->
 <section id="gameUI" class="screen" aria-label="Game">
+
 <div class="panel">
+
   <noscript>
     <div class="meta" style="margin-top:10px;">
       This prototype requires JavaScript to run.
     </div>
   </noscript>
 
-  <!-- Pinned image zone: ALWAYS visible, never scrolls -->
+  <!-- IMAGE AREA (pinned, never scrolls) -->
   <div id="sceneImageMount" class="image-zone"></div>
 
-  <!-- Scroll zone: narration + meta + choices + drawer -->
+  <!-- SCROLLABLE CONTENT AREA -->
   <div class="game-scroll" id="gameScroll">
+
     <div id="scene" class="scene" aria-live="polite"></div>
     <div id="meta" class="meta"></div>
 
@@ -517,10 +520,12 @@ Press <span class="kbd">Enter</span> to begin
       <summary id="drawerTitle">Drawer</summary>
       <pre id="drawerBody"></pre>
     </details>
+
   </div>
 
-  <!-- Fixed toolbar: ALWAYS visible, never scrolls -->
+  <!-- FIXED CONTROL BAR -->
   <div class="row">
+
     <button class="tinybtn" id="btnInv" type="button">Inventory</button>
     <button class="tinybtn" id="btnChron" type="button">Chronicle</button>
     <button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
@@ -545,8 +550,12 @@ Press <span class="kbd">Enter</span> to begin
       <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
       <span class="kbd">Esc</span> close
     </span>
+
   </div>
-</div>
+
+</div>  <!-- END panel -->
+
+</section>
 </section>
 </main>
 </div>
