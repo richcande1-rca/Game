@@ -1,11 +1,11 @@
 /* Gothic Chronicle — deterministic engine + overlays + images
-  - Deterministic world: rooms/items/flags are truth
-  - Overlay layer:
-       * AUTO overlay (default): generates gothic narration + choice text every render
-       * Manual GPT overlay button: paste JSON to override (one turn only)
-  - Images:
-       * Loads from Cloudflare Worker endpoint (keeps API keys secret)
-  - Save: localStorage
+ - Deterministic world: rooms/items/flags are truth
+ - Overlay layer:
+      * AUTO overlay (default): generates gothic narration + choice text every render
+      * Manual GPT overlay button: paste JSON to override (one turn only)
+ - Images:
+      * Loads from Cloudflare Worker endpoint (keeps API keys secret)
+ - Save: localStorage
 */
 
 const SAVE_KEY    = "gothicChronicle.save.v1";
@@ -20,7 +20,7 @@ const AUTO_IMAGES   = true;
 const CF_IMAGE_BASE = "https://gothic-chronicle-images.rich-gothic.workers.dev/image";
 
 /* ---------------------------
-  WORLD DATA (deterministic)
+ WORLD DATA (deterministic)
 ---------------------------- */
 const WORLD = {
 rooms: {
@@ -239,7 +239,7 @@ examine:
 };
 
 /* ---------------------------
-  STATE / SAVE
+ STATE / SAVE
 ---------------------------- */
 function defaultState() {
 return {
@@ -273,7 +273,7 @@ localStorage.setItem(SAVE_KEY, JSON.stringify(STATE));
 }
 
 /* ---------------------------
-  OVERLAY STORAGE
+ OVERLAY STORAGE
 ---------------------------- */
 function loadOverlay() {
 try {
@@ -295,7 +295,7 @@ localStorage.removeItem(OVERLAY_KEY);
 }
 
 /* ---------------------------
-  HELPERS
+ HELPERS
 ---------------------------- */
 function room() { return WORLD.rooms[STATE.roomId]; }
 function hasItem(itemId) { return STATE.inventory.includes(itemId); }
@@ -308,7 +308,7 @@ if (STATE.chronicle.length > 500) STATE.chronicle.shift();
 }
 
 /* ---------------------------
-  UI DRAWER
+ UI DRAWER
 ---------------------------- */
 function showDrawer(title, body) {
 const drawer = document.getElementById("drawer");
@@ -329,7 +329,7 @@ drawer.open = false;
 }
 
 /* ---------------------------
-  INTENTS
+ INTENTS
 ---------------------------- */
 function getLegalIntents() {
 const r = room();
@@ -397,7 +397,7 @@ return intents;
 }
 
 /* ---------------------------
-  BASE NARRATION
+ BASE NARRATION
 ---------------------------- */
 function narrateSceneBase() {
 const r = room();
@@ -456,7 +456,7 @@ return intent.id;
 }
 
 /* ---------------------------
-  AUTO NARRATOR (local gothic overlay)
+ AUTO NARRATOR (local gothic overlay)
 ---------------------------- */
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -631,61 +631,53 @@ return prettyChoiceBase(intent);
 }
 
 /* ---------------------------
-  IMAGE: Cloudflare Worker endpoint
+ IMAGE: Cloudflare Worker endpoint
 ---------------------------- */
 function ensureSceneImageElement() {
-  // Prefer the fixed mount (new layout)
-  const mount = document.getElementById("sceneImageMount");
-  const sceneEl = document.getElementById("scene"); // fallback anchor
-  const parentForWrap = mount || (sceneEl ? sceneEl.parentNode : null);
+const sceneEl = document.getElementById("scene");
+if (!sceneEl) return null;
 
-  if (!parentForWrap) return null;
+let wrap = document.getElementById("sceneImageFrame");
+if (!wrap) {
+wrap = document.createElement("div");
+wrap.id = "sceneImageFrame";
+wrap.className = "frame-wrap";
 
-  let wrap = document.getElementById("sceneImageFrame");
-  if (!wrap) {
-    wrap = document.createElement("div");
-    wrap.id = "sceneImageFrame";
-    wrap.className = "frame-wrap";
+// corner ornaments
+const tl = document.createElement("div"); tl.className = "frame-corner tl";
+const tr = document.createElement("div"); tr.className = "frame-corner tr";
+const bl = document.createElement("div"); bl.className = "frame-corner bl";
+const br = document.createElement("div"); br.className = "frame-corner br";
+wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
 
-    // corner ornaments
-    const tl = document.createElement("div"); tl.className = "frame-corner tl";
-    const tr = document.createElement("div"); tr.className = "frame-corner tr";
-    const bl = document.createElement("div"); bl.className = "frame-corner bl";
-    const br = document.createElement("div"); br.className = "frame-corner br";
-    wrap.appendChild(tl); wrap.appendChild(tr); wrap.appendChild(bl); wrap.appendChild(br);
+// insert wrapper before scene text
+sceneEl.parentNode.insertBefore(wrap, sceneEl);
+}
 
-    // ✅ Insert into fixed mount if it exists, otherwise fallback to before scene text
-    if (mount) {
-      mount.appendChild(wrap);
-    } else if (sceneEl) {
-      sceneEl.parentNode.insertBefore(wrap, sceneEl);
-    } else {
-      parentForWrap.appendChild(wrap);
-    }
-  }
+let img = document.getElementById("sceneImage");
+if (!img) {
+img = document.createElement("img");
+img.id = "sceneImage";
+img.alt = "Scene illustration";
+img.loading = "lazy";
+img.classList.remove("is-loaded");
 
-  let img = document.getElementById("sceneImage");
-  if (!img) {
-    img = document.createElement("img");
-    img.id = "sceneImage";
-    img.alt = "Scene illustration";
-    img.loading = "lazy";
+img.onerror = () => { wrap.style.display = "none"; };
+img.onload  = () => { wrap.style.display = "block"; };
+img.onerror = () => {
+wrap.style.display = "none";
+};
 
-    // reset animation class so each new src can fade-in
-    img.classList.remove("is-loaded");
+img.onload = () => {
+wrap.style.display = "block";
+// kick animation (next frame so CSS transition applies)
+requestAnimationFrame(() => img.classList.add("is-loaded"));
+};
 
-    img.onerror = () => { wrap.style.display = "none"; };
+wrap.appendChild(img);
+}
 
-    img.onload = () => {
-      wrap.style.display = "block";
-      // kick animation (next frame so CSS transition applies)
-      requestAnimationFrame(() => img.classList.add("is-loaded"));
-    };
-
-    wrap.appendChild(img);
-  }
-
-  return img;
+return img;
 }
 
 function imageUrlForRoom(roomId) {
@@ -708,7 +700,7 @@ return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${encodeURIComp
 }
 
 /* ---------------------------
-  IMAGE TRIGGER (for later AHK)
+ IMAGE TRIGGER (for later AHK)
 ---------------------------- */
 function emitImageTrigger(subject, beat) {
 const block =
@@ -722,7 +714,7 @@ addChron(block);
 }
 
 /* ---------------------------
-  MANUAL GPT OVERLAY (paste JSON)
+ MANUAL GPT OVERLAY (paste JSON)
 ---------------------------- */
 function getOverlayChoiceText(intentId) {
 if (!OVERLAY?.choices?.length) return null;
@@ -755,7 +747,7 @@ return { accepted: filtered.length, legal: legalSet.size };
 }
 
 /* ---------------------------
-  APPLY INTENT
+ APPLY INTENT
 ---------------------------- */
 function applyIntent(intent) {
 clearOverlay();
@@ -902,279 +894,286 @@ return out.trim();
 }
 
 /* ---------------------------
-  RENDER
+ RENDER
 ---------------------------- */
 function render() {
-  const sceneEl   = document.getElementById("scene");
-  const metaEl    = document.getElementById("meta");
-  const choicesEl = document.getElementById("choices");
+const sceneEl   = document.getElementById("scene");
+const metaEl    = document.getElementById("meta");
+const choicesEl = document.getElementById("choices");
 
-  if (!sceneEl || !metaEl || !choicesEl) return;
+if (!sceneEl || !metaEl || !choicesEl) return;
 
-  const r = room();
-  const intents = getLegalIntents();
+const r = room();
+const intents = getLegalIntents();
 
-  if (AUTO_NARRATOR && !OVERLAY) {
-    OVERLAY = buildAutoOverlay(intents);
-    saveOverlay();
-  }
+if (AUTO_NARRATOR && !OVERLAY) {
+OVERLAY = buildAutoOverlay(intents);
+saveOverlay();
+}
 
-  if (AUTO_IMAGES) {
-    const img = ensureSceneImageElement();
-    if (img) {
-      const url = imageUrlForRoom(STATE.roomId);
-      if (url) {
-        img.style.display = "";
-        img.src = url;
-      } else {
-        img.style.display = "none";
-      }
-    }
-  }
+if (AUTO_IMAGES) {
+const img = ensureSceneImageElement();
+if (img) {
+const url = imageUrlForRoom(STATE.roomId);
+if (url) {
+img.style.display = "";
+img.src = url;
+} else {
+img.style.display = "none";
+}
+}
+}
 
-  sceneEl.textContent =
-    (OVERLAY?.sceneText && OVERLAY.sceneText.length)
-      ? OVERLAY.sceneText
-      : narrateSceneBase();
+sceneEl.textContent =
+(OVERLAY?.sceneText && OVERLAY.sceneText.length)
+? OVERLAY.sceneText
+: narrateSceneBase();
 
-  const visible = (r.items || []).map(id => WORLD.items[id]?.name || id);
-  metaEl.textContent =
-    `${r.name} • Turn ${STATE.turn} • ` +
-    (visible.length ? `You notice: ${visible.join(", ")}.` : `Nothing obvious presents itself.`);
+const visible = (r.items || []).map(id => WORLD.items[id]?.name || id);
+metaEl.textContent =
+`${r.name} • Turn ${STATE.turn} • ` +
+(visible.length ? `You notice: ${visible.join(", ")}.` : `Nothing obvious presents itself.`);
 
-  choicesEl.innerHTML = "";
-  for (let i = 0; i < intents.length && i < 9; i++) {
-    const intent = intents[i];
-    const btn = document.createElement("button");
-    btn.className = "choice";
+choicesEl.innerHTML = "";
+for (let i = 0; i < intents.length && i < 9; i++) {
+const intent = intents[i];
+const btn = document.createElement("button");
+btn.className = "choice";
 
-    const overlayText = getOverlayChoiceText(intent.id);
-    btn.textContent = `${i + 1}) ${overlayText || prettyChoiceBase(intent)}`;
+const overlayText = getOverlayChoiceText(intent.id);
+btn.textContent = `${i + 1}) ${overlayText || prettyChoiceBase(intent)}`;
 
-    btn.onclick = () => {
-      if (window.gcMusicKick) window.gcMusicKick(); // Android-safe music start
-      hideDrawer();
-      applyIntent(intent);
-    };
+btn.onclick = () => {
+if (window.gcMusicKick) window.gcMusicKick(); // Android-safe music start
+hideDrawer();
+applyIntent(intent);
+};
 
-    choicesEl.appendChild(btn);
-  }
+choicesEl.appendChild(btn);
+}
 } // ✅ CLOSES render()
 
 
 /* ---------------------------
-  INPUT (bind once)
+ INPUT (bind once)
 ---------------------------- */
 window.addEventListener("keydown", (e) => {
-  if (e.repeat) return;
+if (e.repeat) return;
 
-  if (e.key >= "1" && e.key <= "9") {
-    const i = parseInt(e.key, 10) - 1;
-    const intents = getLegalIntents();
-    if (intents[i]) {
-      hideDrawer();
-      applyIntent(intents[i]);
-    }
-    return;
-  }
+if (e.key >= "1" && e.key <= "9") {
+const i = parseInt(e.key, 10) - 1;
+const intents = getLegalIntents();
+if (intents[i]) {
+hideDrawer();
+applyIntent(intents[i]);
+}
+return;
+}
 
-  const k = e.key.toLowerCase();
-  if (k === "i") showDrawer("Inventory", inventoryText());
-  if (k === "c") showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
-  if (e.key === "Escape") hideDrawer();
+const k = e.key.toLowerCase();
+if (k === "i") showDrawer("Inventory", inventoryText());
+if (k === "c") showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
+if (e.key === "Escape") hideDrawer();
 });
 
 
 /* ---------------------------
-  BUTTONS
+ BUTTONS
 ---------------------------- */
 function bindButtons() {
-  const btnInv     = document.getElementById("btnInv");
-  const btnChron   = document.getElementById("btnChron");
-  const btnSave    = document.getElementById("btnSave");
-  const btnReset   = document.getElementById("btnReset");
-  const btnOverlay = document.getElementById("btnOverlay");
+const btnInv     = document.getElementById("btnInv");
+const btnChron   = document.getElementById("btnChron");
+const btnSave    = document.getElementById("btnSave");
+const btnReset   = document.getElementById("btnReset");
+const btnOverlay = document.getElementById("btnOverlay");
 
-  // Music UI
-  const btnMusic   = document.getElementById("btnMusic");
-  const bgm        = document.getElementById("bgm");
-  const bgmVol     = document.getElementById("bgmVol");
+// Music UI
+const btnMusic   = document.getElementById("btnMusic");
+const bgm        = document.getElementById("bgm");
+const bgmVol     = document.getElementById("bgmVol");
 
-  if (btnInv) btnInv.onclick = () => showDrawer("Inventory", inventoryText());
+if (btnInv) btnInv.onclick = () => showDrawer("Inventory", inventoryText());
 
-  if (btnChron) btnChron.onclick = () =>
-    showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
+if (btnChron) btnChron.onclick = () =>
+showDrawer("Chronicle", STATE.chronicle.slice(-140).join("\n\n"));
 
-  if (btnSave) btnSave.onclick = () => {
-    saveState();
-    showDrawer("Saved", "State saved to localStorage.");
-  };
+if (btnSave) btnSave.onclick = () => {
+saveState();
+showDrawer("Saved", "State saved to localStorage.");
+};
 
-  if (btnReset) btnReset.onclick = () => {
-    localStorage.removeItem(SAVE_KEY);
-    localStorage.removeItem(OVERLAY_KEY);
+if (btnReset) btnReset.onclick = () => {
+localStorage.removeItem(SAVE_KEY);
+localStorage.removeItem(OVERLAY_KEY);
 
-    // stop music + clear prefs
-    try {
-      if (bgm) { bgm.pause(); bgm.currentTime = 0; }
-      localStorage.removeItem("gothicChronicle.bgm.v1");
-      localStorage.removeItem("gothicChronicle.bgmVol.v1");
-      if (btnMusic) btnMusic.textContent = "Music: Off";
-      if (bgmVol) bgmVol.value = "45";
-    } catch {}
+// stop music + clear prefs
+try {
+if (bgm) { bgm.pause(); bgm.currentTime = 0; }
+localStorage.removeItem("gothicChronicle.bgm.v1");
+localStorage.removeItem("gothicChronicle.bgmVol.v1");
+if (btnMusic) btnMusic.textContent = "Music: Off";
+if (bgmVol) bgmVol.value = "45";
+} catch {}
 
-    STATE = defaultState();
-    OVERLAY = null;
-    showDrawer("Reset", "Hard reset done. Reloading scene…");
-    render();
-  };
+STATE = defaultState();
+OVERLAY = null;
+showDrawer("Reset", "Hard reset done. Reloading scene…");
+render();
+};
 
-  if (btnOverlay) btnOverlay.onclick = () => {
-    const legalIds = getLegalIntents().map(x => x.id);
-    const template = {
-      sceneText: "Optional: Replace the scene narration for this moment.",
-      choices: legalIds.map(id => ({ id, text: `Gothic text for ${id}...` }))
-    };
+if (btnOverlay) btnOverlay.onclick = () => {
+const legalIds = getLegalIntents().map(x => x.id);
+const template = {
+sceneText: "Optional: Replace the scene narration for this moment.",
+choices: legalIds.map(id => ({ id, text: `Gothic text for ${id}...` }))
+};
 
-    const pasted = prompt(
-      `Paste GPT overlay JSON here.\n\nLegal intent IDs right now:\n${legalIds.join(", ")}\n\nTip: IDs must match EXACTLY.`,
-      JSON.stringify(template, null, 2)
-    );
+const pasted = prompt(
+`Paste GPT overlay JSON here.\n\nLegal intent IDs right now:\n${legalIds.join(", ")}\n\nTip: IDs must match EXACTLY.`,
+JSON.stringify(template, null, 2)
+);
 
-    if (pasted === null) return;
-    if (!pasted.trim()) return;
+if (pasted === null) return;
+if (!pasted.trim()) return;
 
-    try {
-      const res = applyOverlayFromJsonText(pasted);
-      addChron(`Manual overlay applied: accepted ${res.accepted}/${res.legal} choices.`);
-      render();
-    } catch (err) {
-      alert(err?.message || String(err));
-    }
-  };
+try {
+const res = applyOverlayFromJsonText(pasted);
+addChron(`Manual overlay applied: accepted ${res.accepted}/${res.legal} choices.`);
+render();
+} catch (err) {
+alert(err?.message || String(err));
+}
+};
 
-  // --- Music toggle + Autoplay on first interaction + Volume slider ---
-  if (btnMusic && bgm) {
-    const KEY_ON  = "gothicChronicle.bgm.v1";
-    const KEY_VOL = "gothicChronicle.bgmVol.v1";
+// --- Music toggle + Autoplay on first interaction + Volume slider ---
+if (btnMusic && bgm) {
+const KEY_ON  = "gothicChronicle.bgm.v1";
+const KEY_VOL = "gothicChronicle.bgmVol.v1";
 
-    // default to ON the first time
-    if (localStorage.getItem(KEY_ON) === null) localStorage.setItem(KEY_ON, "1");
+// default to ON the first time
+if (localStorage.getItem(KEY_ON) === null) localStorage.setItem(KEY_ON, "1");
 
-    // load volume (0..100)
-    const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
-    const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
-    if (bgmVol) bgmVol.value = String(volPct);
+// load volume (0..100)
+const savedVol = parseInt(localStorage.getItem(KEY_VOL) || "45", 10);
+const volPct = Math.max(0, Math.min(100, isFinite(savedVol) ? savedVol : 45));
+if (bgmVol) bgmVol.value = String(volPct);
 
-    let playing = false;
+let playing = false;
 
-    function targetVolume() {
-      const v = parseInt(localStorage.getItem(KEY_VOL) || String(volPct), 10);
-      const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : volPct));
-      return clamped / 100;
-    }
+function targetVolume() {
+const v = parseInt(localStorage.getItem(KEY_VOL) || String(volPct), 10);
+const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : volPct));
+return clamped / 100;
+}
 
-    function syncLabel() {
-      const prefOn = localStorage.getItem(KEY_ON) === "1";
-      btnMusic.textContent = (playing || prefOn) ? "Music: On" : "Music: Off";
-    }
+function syncLabel() {
+const prefOn = localStorage.getItem(KEY_ON) === "1";
+btnMusic.textContent = (playing || prefOn) ? "Music: On" : "Music: Off";
+}
 
-    async function start() {
-      try {
-        // Start silent
-        bgm.volume = 0;
+async function start() {
+try {
+// Start silent
+bgm.volume = 0;
 
-        await bgm.play();
+await bgm.play();
 
-        playing = true;
-        localStorage.setItem(KEY_ON, "1");
-        syncLabel();
+playing = true;
+localStorage.setItem(KEY_ON, "1");
+syncLabel();
 
-        // Smooth fade to slider target (NOT always 1.0)
-        const target = targetVolume();
-        let v = 0;
+// Smooth fade to slider target (NOT always 1.0)
+const target = targetVolume();
+let v = 0;
 
-        const fade = setInterval(() => {
-          v += 0.02;
-          bgm.volume = Math.min(v, target);
-          if (v >= target) clearInterval(fade);
-        }, 120);
-      } catch {
-        // IMPORTANT: do NOT turn the preference off here.
-        // Autoplay can fail before a valid user gesture; we want later gestures to retry.
-        playing = false;
-        syncLabel();
-      }
-    }
+const fade = setInterval(() => {
+v += 0.02;
+bgm.volume = Math.min(v, target);
+if (v >= target) clearInterval(fade);
+}, 120);
+} catch {
+// IMPORTANT: do NOT turn the preference off here.
+// Autoplay can fail before a valid user gesture; we want later gestures to retry.
+playing = false;
+syncLabel();
+}
+}
 
-    function stop() {
-      playing = false;
-      localStorage.setItem(KEY_ON, "0");
-      bgm.pause();
-      bgm.currentTime = 0;
-      syncLabel();
-    }
+function stop() {
+playing = false;
+localStorage.setItem(KEY_ON, "0");
+bgm.pause();
+bgm.currentTime = 0;
+syncLabel();
+}
 
-    // initial label (based on pref; actual playback waits for gesture)
-    syncLabel();
+// initial label (based on pref; actual playback waits for gesture)
+syncLabel();
 
-    // manual toggle
-    btnMusic.onclick = async () => {
-      if (playing) stop();
-      else await start();
-    };
+// manual toggle
+btnMusic.onclick = async () => {
+if (playing) stop();
+else await start();
+};
 
-    // volume slider
-    if (bgmVol) {
-      bgmVol.addEventListener("input", () => {
-        const v = parseInt(bgmVol.value, 10);
-        const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : 45));
-        localStorage.setItem(KEY_VOL, String(clamped));
-        // If currently playing, apply immediately
-        if (playing) bgm.volume = clamped / 100;
-      });
-    }
+// volume slider
+if (bgmVol) {
+bgmVol.addEventListener("input", () => {
+const v = parseInt(bgmVol.value, 10);
+const clamped = Math.max(0, Math.min(100, isFinite(v) ? v : 45));
+localStorage.setItem(KEY_VOL, String(clamped));
+// If currently playing, apply immediately
+if (playing) bgm.volume = clamped / 100;
+});
+}
 
-    // expose a safe "kick" callable from any click handler
-    window.gcMusicKick = async () => {
-      if (localStorage.getItem(KEY_ON) !== "1") return;
-      if (!playing) await start();
-    };
+// expose a safe "kick" callable from any click handler
+window.gcMusicKick = async () => {
+if (localStorage.getItem(KEY_ON) !== "1") return;
+if (!playing) await start();
+};
 
-    // autoplay on first interaction (Android-friendly)
-    const firstKick = async () => { await window.gcMusicKick(); };
+// autoplay on first interaction (Android-friendly)
+const firstKick = async () => { await window.gcMusicKick(); };
 
-    window.addEventListener("touchstart", firstKick, { once: true, passive: true });
-    window.addEventListener("click", firstKick, { once: true });
-    window.addEventListener("pointerdown", firstKick, { once: true });
-    window.addEventListener("keydown", firstKick, { once: true });
-  }
+window.addEventListener("touchstart", firstKick, { once: true, passive: true });
+window.addEventListener("click", firstKick, { once: true });
+window.addEventListener("pointerdown", firstKick, { once: true });
+window.addEventListener("keydown", firstKick, { once: true });
+}
 }
 
 
 /* ---------------------------
+  BOOT
   BOOT  (replace your old BOOT block with this)
 ---------------------------- */
 bindButtons();
 
+function showGame(fromContinue = false) {
 function fadeToScreen(fromContinue = false) {
-  const title = document.getElementById("titleScreen");
-  const game  = document.getElementById("gameUI");
+const title = document.getElementById("titleScreen");
+const game  = document.getElementById("gameUI");
 
+  if (title) title.style.display = "none";
+  if (game)  game.style.display  = "block";
   if (!title || !game) return;
 
-  // If Begin → start fresh
-  if (!fromContinue) {
-    localStorage.removeItem(SAVE_KEY);
-    localStorage.removeItem(OVERLAY_KEY);
-    STATE = defaultState();
-    OVERLAY = null;
-  }
+// If Begin → start fresh
+if (!fromContinue) {
+localStorage.removeItem(SAVE_KEY);
+localStorage.removeItem(OVERLAY_KEY);
+STATE = defaultState();
+OVERLAY = null;
+}
 
+  render();
   // Fade: title -> game
   game.classList.add("is-active");
   title.classList.remove("is-active");
 
+  // kick music after valid user gesture
+  if (window.gcMusicKick) window.gcMusicKick();
   // Render once the game is becoming visible (next frame so layout is ready)
   requestAnimationFrame(() => {
     render();
@@ -1183,23 +1182,28 @@ function fadeToScreen(fromContinue = false) {
 }
 
 (function initTitleScreen() {
-  const btnStart = document.getElementById("btnStart");
-  const btnCont  = document.getElementById("btnContinue");
+const btnStart = document.getElementById("btnStart");
+const btnCont  = document.getElementById("btnContinue");
 
-  const hasSave = !!localStorage.getItem(SAVE_KEY);
-  if (btnCont && hasSave) btnCont.style.display = "";
+const hasSave = !!localStorage.getItem(SAVE_KEY);
+if (btnCont && hasSave) btnCont.style.display = "";
 
+  if (btnStart) btnStart.onclick = () => showGame(false);
+  if (btnCont)  btnCont.onclick  = () => showGame(true);
   if (btnStart) btnStart.onclick = () => fadeToScreen(false);
   if (btnCont)  btnCont.onclick  = () => fadeToScreen(true);
 
+  // Press Enter to begin
   // Press Enter to begin (Continue if save exists)
-  window.addEventListener("keydown", (e) => {
-    if (e.repeat) return;
-    if (e.key === "Enter") {
+window.addEventListener("keydown", (e) => {
+if (e.repeat) return;
+if (e.key === "Enter") {
+      if (hasSave) showGame(true);
+      else showGame(false);
       if (hasSave) fadeToScreen(true);
       else fadeToScreen(false);
-    }
-  }, { once: true });
+}
+}, { once: true });
 })();
 
 // Handy in console:
