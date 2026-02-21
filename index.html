@@ -326,13 +326,25 @@
       position: relative;
     }
 
-    .title-img{
-      width: 100%;
-      height: 100%;
-      display:block;
-      object-fit: cover;
-      filter: contrast(1.02) saturate(0.95);
-    }
+   .title-img{
+  width:100%;
+  height:100%;
+  display:block;
+
+  /* Desktop cinematic fill */
+  object-fit: cover;
+  object-position: center top;   /* prevents important top area cropping */
+
+  filter: contrast(1.02) saturate(0.95);
+}
+
+/* Hybrid behaviour — no crop on smaller screens */
+@media (max-width:720px){
+  .title-img{
+    object-fit: contain;
+    background:#060606;  /* clean letterbox */
+  }
+}
 
     .title-overlay{
       position:absolute;
