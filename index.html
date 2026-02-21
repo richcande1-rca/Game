@@ -495,55 +495,57 @@ Press <span class="kbd">Enter</span> to begin
 <!-- GAME UI -->
 <section id="gameUI" class="screen" aria-label="Game">
 <div class="panel">
-<noscript>
-<div class="meta" style="margin-top:10px;">
-This prototype requires JavaScript to run.
-</div>
-</noscript>
+  <noscript>
+    <div class="meta" style="margin-top:10px;">
+      This prototype requires JavaScript to run.
+    </div>
+  </noscript>
 
-<div class="game-scroll">
-<!-- Anchor for scene image insertion -->
-<div id="sceneImageMount"></div>
+  <!-- Pinned image zone: ALWAYS visible, never scrolls -->
+  <div id="sceneImageMount" class="image-zone"></div>
 
-<div id="scene" class="scene" aria-live="polite"></div>
-<div id="meta" class="meta"></div>
+  <!-- Scroll zone: narration + meta + choices + drawer -->
+  <div class="game-scroll" id="gameScroll">
+    <div id="scene" class="scene" aria-live="polite"></div>
+    <div id="meta" class="meta"></div>
 
-<div class="divider"></div>
+    <div class="divider"></div>
 
-<div class="choices" id="choices"></div>
+    <div class="choices" id="choices"></div>
 
-<details id="drawer" style="display:none;">
-<summary id="drawerTitle">Drawer</summary>
-<pre id="drawerBody"></pre>
-</details>
-</div>
+    <details id="drawer" style="display:none;">
+      <summary id="drawerTitle">Drawer</summary>
+      <pre id="drawerBody"></pre>
+    </details>
+  </div>
 
-<div class="row">
-<button class="tinybtn" id="btnInv" type="button">Inventory</button>
-<button class="tinybtn" id="btnChron" type="button">Chronicle</button>
-<button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
-<button class="tinybtn" id="btnSave" type="button">Force Save</button>
-<button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
+  <!-- Fixed toolbar: ALWAYS visible, never scrolls -->
+  <div class="row">
+    <button class="tinybtn" id="btnInv" type="button">Inventory</button>
+    <button class="tinybtn" id="btnChron" type="button">Chronicle</button>
+    <button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
+    <button class="tinybtn" id="btnSave" type="button">Force Save</button>
+    <button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
 
-<button class="tinybtn music" id="btnMusic" type="button" aria-label="Toggle background music">
-Music: Off
-</button>
+    <button class="tinybtn music" id="btnMusic" type="button" aria-label="Toggle background music">
+      Music: Off
+    </button>
 
-<label class="vol" title="Music volume">
-<span class="vol-label">Vol</span>
-<input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
-</label>
+    <label class="vol" title="Music volume">
+      <span class="vol-label">Vol</span>
+      <input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
+    </label>
 
-<audio id="bgm" preload="auto" loop>
-<source src="assets/bgm.mp3" type="audio/mpeg" />
-</audio>
+    <audio id="bgm" preload="auto" loop>
+      <source src="assets/bgm.mp3" type="audio/mpeg" />
+    </audio>
 
-<span class="sub">
-Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
-<span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
-<span class="kbd">Esc</span> close
-</span>
-</div>
+    <span class="sub">
+      Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
+      <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
+      <span class="kbd">Esc</span> close
+    </span>
+  </div>
 </div>
 </section>
 </main>
