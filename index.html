@@ -26,7 +26,7 @@ body{
   font-family: ui-serif, Georgia, "Times New Roman", serif;
   line-height:1.45;
 
-  /* ✅ revert to normal scrolling */
+  /* ✅ normal page scrolling (safe) */
   overflow: auto;
 }
 
@@ -60,6 +60,36 @@ body{
   padding:14px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.35);
   box-sizing: border-box;
+}
+
+/* --------------------------------
+   GAME UI: fixed image + scrollable bottom
+---------------------------------- */
+.panel.game-shell{
+  display: grid;
+  grid-template-rows: auto 1fr;   /* image then scroll zone */
+  height: calc(100dvh - 36px);    /* viewport minus wrap padding-ish */
+  max-height: calc(100dvh - 36px);
+  gap: 10px;
+}
+
+/* top hero image zone stays visible */
+.top-hero{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+/* bottom area is the only scroller */
+.bottom-ui{
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px;
+}
+
+/* if your injected frame uses margins, keep it snug in the top area */
+.top-hero .frame-wrap{
+  margin: 0 auto;
 }
 
 /* --- Victorian Frame for generated scene image --- */
@@ -356,6 +386,11 @@ pre{
   .scene{ font-size: 17px; }
   .panel{ padding: 12px; }
   .wrap{ padding: 12px; }
+
+  .panel.game-shell{
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
 }
 </style>
 </head>
@@ -392,7 +427,7 @@ pre{
 
     <!-- GAME UI -->
     <section id="gameUI" class="screen" aria-label="Game">
-      <div class="panel">
+      <div class="panel game-shell">
 
         <noscript>
           <div class="meta" style="margin-top:10px;">
@@ -400,51 +435,55 @@ pre{
           </div>
         </noscript>
 
-        <!-- Scene image mount (scrolls with page now) -->
-        <div id="sceneImageMount" class="image-zone"></div>
+        <!-- TOP: always-visible image zone -->
+        <div id="sceneImageMount" class="image-zone top-hero"></div>
 
-        <div id="scene" class="scene" aria-live="polite"></div>
-        <div id="meta" class="meta"></div>
+        <!-- BOTTOM: scrollable UI zone -->
+        <div class="bottom-ui">
 
-        <div class="divider"></div>
+          <div id="scene" class="scene" aria-live="polite"></div>
+          <div id="meta" class="meta"></div>
 
-        <div class="choices" id="choices"></div>
+          <div class="divider"></div>
 
-        <details id="drawer" style="display:none;">
-          <summary id="drawerTitle">Drawer</summary>
-          <pre id="drawerBody"></pre>
-        </details>
+          <div class="choices" id="choices"></div>
 
-        <!-- Control bar (scrolls with page now) -->
-        <div class="row">
+          <details id="drawer" style="display:none;">
+            <summary id="drawerTitle">Drawer</summary>
+            <pre id="drawerBody"></pre>
+          </details>
 
-          <button class="tinybtn" id="btnInv" type="button">Inventory</button>
-          <button class="tinybtn" id="btnChron" type="button">Chronicle</button>
-          <button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
-          <button class="tinybtn" id="btnSave" type="button">Force Save</button>
-          <button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
+          <!-- Control bar -->
+          <div class="row">
 
-          <button class="tinybtn music" id="btnMusic" type="button" aria-label="Toggle background music">
-            Music: Off
-          </button>
+            <button class="tinybtn" id="btnInv" type="button">Inventory</button>
+            <button class="tinybtn" id="btnChron" type="button">Chronicle</button>
+            <button class="tinybtn" id="btnOverlay" type="button">GPT Overlay</button>
+            <button class="tinybtn" id="btnSave" type="button">Force Save</button>
+            <button class="tinybtn" id="btnReset" type="button">Hard Reset</button>
 
-          <label class="vol" title="Music volume">
-            <span class="vol-label">Vol</span>
-            <input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
-          </label>
+            <button class="tinybtn music" id="btnMusic" type="button" aria-label="Toggle background music">
+              Music: Off
+            </button>
 
-          <audio id="bgm" preload="auto" loop>
-            <source src="assets/bgm.mp3" type="audio/mpeg" />
-          </audio>
+            <label class="vol" title="Music volume">
+              <span class="vol-label">Vol</span>
+              <input id="bgmVol" type="range" min="0" max="100" step="1" value="45" />
+            </label>
 
-          <span class="sub">
-            Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
-            <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
-            <span class="kbd">Esc</span> close
-          </span>
+            <audio id="bgm" preload="auto" loop>
+              <source src="assets/bgm.mp3" type="audio/mpeg" />
+            </audio>
+
+            <span class="sub">
+              Keys: <span class="kbd">1–9</span> choose • <span class="kbd">Enter</span> first •
+              <span class="kbd">I</span> inventory • <span class="kbd">C</span> chronicle •
+              <span class="kbd">Esc</span> close
+            </span>
+
+          </div>
 
         </div>
-
       </div>
     </section>
 
