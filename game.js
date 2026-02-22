@@ -796,18 +796,6 @@ function applyIntent(intent) {
     // Arrival visit + arrival milestone image trigger
     handleFirstVisitForCurrentRoom();
 
-    // ✅ Courtyard ghost scene — fire once on first entry (on arrival)
-    if (intent.to === "courtyard" && !hasFlag("courtyard_ghost_seen")) {
-      setFlag("courtyard_ghost_seen", true);
-
-      emitImageTrigger(
-        "Courtyard Apparition",
-        "As you step into the moonlit courtyard, an apparition forms near the cracked fountain—tall, pale, half-remembered. Fog coils around its feet like it belongs to the stone. The statues seem to watch."
-      );
-
-      addChron(`Turn ${STATE.turn}: Saw an apparition in the courtyard.`);
-    }
-
     saveState();
     render();
     return;
@@ -825,6 +813,19 @@ function applyIntent(intent) {
       markTaken(STATE.roomId, itemId);
       STATE.inventory.push(itemId);
       addChron(`Turn ${STATE.turn}: Took ${WORLD.items[itemId]?.name || itemId}.`);
+
+      // ✅ Courtyard ghost appears AFTER taking the brass key (not on arrival)
+      if (STATE.roomId === "courtyard" && itemId === "brass_key" && !hasFlag("courtyard_ghost_seen")) {
+        setFlag("courtyard_ghost_seen", true);
+
+        emitImageTrigger(
+          "Courtyard Apparition",
+          "The brass key warms in your palm. The fountain’s black water trembles—then stills. In the moonlit mist, a figure resolves beside the cracked basin, too tall, too pale, and watching you as if you were late."
+        );
+
+        addChron(`Turn ${STATE.turn}: The apparition appeared after taking the brass key.`);
+      }
+
     } else {
       addChron(`Turn ${STATE.turn}: Tried to take ${itemId}, but it wasn't there.`);
     }
