@@ -726,7 +726,7 @@ function imageUrlForRoom(roomId) {
     .join(",");
 
   const stateSig = `f:${flags}|m:${miles}`;
-  return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${encodeURIComponent(roomId)}&state=${encodeURIComponent(stateSig)}`;
+ return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${encodeURIComponent(roomId)}&state=${encodeURIComponent(stateSig)}&t=${Date.now()}`;
 }
 
 /* ---------------------------
