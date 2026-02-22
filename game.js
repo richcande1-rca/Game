@@ -294,6 +294,19 @@ function clearOverlay() {
 }
 
 /* ---------------------------
+ CUTSCENE (mini overlay)
+---------------------------- */
+function playCutscene(sceneText, continueLabel = "Continue…") {
+  OVERLAY = {
+    sceneText: sceneText,
+    choices: [{ id: "CUTSCENE_CONTINUE", text: continueLabel }],
+    ts: Date.now(),
+    manual: true
+  };
+  saveOverlay();
+}
+
+/* ---------------------------
  HELPERS
 ---------------------------- */
 function room() { return WORLD.rooms[STATE.roomId]; }
@@ -824,6 +837,11 @@ function applyIntent(intent) {
         );
 
         addChron(`Turn ${STATE.turn}: The apparition appeared after taking the brass key.`);
+
+        playCutscene(
+          "The brass key warms in your palm.\n\nThe fountain’s black water trembles—then stills.\n\nAnd in the moonlit mist, a figure resolves beside the cracked basin—too tall, too pale—its face unfinished, as if memory refused to complete it.\n\nIt does not approach.\n\nIt simply stands there… certain you can see it.",
+          "Steady your breath…"
+        );
       }
 
     } else {
@@ -919,6 +937,14 @@ function applyIntent(intent) {
 
   if (intent.type === "wait") {
     addChron(`Turn ${STATE.turn}: Waited. The estate waited back.`);
+    saveState();
+    render();
+    return;
+  }
+
+  // ✅ Cutscene continue
+  if (intent.id === "CUTSCENE_CONTINUE") {
+    clearOverlay();
     saveState();
     render();
     return;
