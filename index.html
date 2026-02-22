@@ -90,6 +90,12 @@ body{
   /* subtle “there is more content” indicator (works even if Chrome auto-hides the bar) */
   box-shadow: inset -8px 0 10px rgba(120,0,0,0.10);
   position: relative;
+
+  cursor: grab;   /* 👈 ADD THIS LINE */
+}
+
+.bottom-ui:active{
+  cursor: grabbing;  /* 👈 ADD THIS NEW BLOCK RIGHT AFTER */
 }
 
 /* ===== Scroll fades (AAA-style, makes scroll obvious even when Chrome hides bars) ===== */
