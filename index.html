@@ -65,6 +65,7 @@ body{
   height: calc(100dvh - 36px);
   max-height: calc(100dvh - 36px);
   gap: 10px;
+  min-height: 0;
 }
 
 /* Top hero stays visible */
@@ -97,22 +98,29 @@ body{
 ------------------------------ */
 @media (min-width: 800px){
   .panel.game-shell{
-    grid-template-rows: minmax(280px, 55dvh) 1fr;
+    grid-template-rows: minmax(300px, 58dvh) 1fr;
   }
 
+  /* Let hero be normal flow (no sticky overlap on desktop) */
   .top-hero{
-    overflow: visible; /* keep the frame contained */
+    position: relative;   /* overrides sticky */
+    top: auto;
+    z-index: 1;
+    overflow: visible;    /* frame won't be clipped */
   }
 
+  /* Keep the frame comfortably inside the hero height */
   .top-hero .frame-wrap{
     height: 100%;
-    max-height: 55dvh;
+    max-height: 58dvh;
     display: flex;
     align-items: center;
+    margin: 0 auto;       /* remove the old bottom margin that can push/clip */
   }
 
+  /* Keep image contained within the frame */
   #sceneImage{
-    max-height: calc(55dvh - 32px); /* subtract a bit for frame padding */
+    max-height: calc(58dvh - 32px);
     width: 100%;
     height: auto;
     object-fit: contain;
