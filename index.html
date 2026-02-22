@@ -94,36 +94,41 @@ body{
 
 /* -----------------------------
    Desktop / landscape tuning
-   - Give the hero WAY more room so the image isn’t tiny
------------------------------- */
+   ----------------------------- */
 @media (min-width: 800px){
+
+  /* Give hero more space so image feels cinematic */
   .panel.game-shell{
     grid-template-rows: minmax(300px, 58dvh) 1fr;
   }
 
-  /* Let hero be normal flow (no sticky overlap on desktop) */
+  /* Desktop MUST NOT be sticky or it overlaps narration */
   .top-hero{
-    position: relative;   /* overrides sticky */
+    position: relative;   /* overrides sticky from base rule */
     top: auto;
     z-index: 1;
-    overflow: visible;    /* frame won't be clipped */
+    overflow: visible;
+    min-height: 0;
   }
 
-  /* Keep the frame comfortably inside the hero height */
+  /* Frame sized to hero area */
   .top-hero .frame-wrap{
     height: 100%;
     max-height: 58dvh;
     display: flex;
     align-items: center;
-    margin: 0 auto;       /* remove the old bottom margin that can push/clip */
+    justify-content: center;
+    margin: 0 auto;       /* remove large bottom spacing */
+    padding: 12px;        /* slightly thinner frame edge */
+    max-width: 620px;
   }
 
-  /* Keep image contained within the frame */
+  /* Make image actually fill the frame nicely */
   #sceneImage{
-    max-height: calc(58dvh - 32px);
     width: 100%;
-    height: auto;
-    object-fit: contain;
+    height: 100%;
+    max-height: none;
+    object-fit: contain;   /* change to 'cover' if you want cinematic crop */
   }
 }
 
