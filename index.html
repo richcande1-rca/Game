@@ -65,6 +65,94 @@ body{
 /* --------------------------------
    GAME UI: fixed image + scrollable bottom
 ---------------------------------- */
+/* =========================================================
+   Gothic Chronicle — Two-Zone Game UI Tuning
+   Goal:
+   - Phone portrait: keep the big cinematic image (your current "perfect" feel)
+   - Laptop/desktop landscape: cap the image height so the scroll area is roomy
+   Drop this BELOW your existing .panel.game-shell / .top-hero / .bottom-ui rules
+   ========================================================= */
+
+/* Base (keeps your phone portrait behavior happy) */
+.panel.game-shell{
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: calc(100dvh - 36px);
+  max-height: calc(100dvh - 36px);
+  gap: 10px;
+}
+
+/* Top hero stays visible; bottom is the only scroller */
+.top-hero{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.bottom-ui{
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px;
+}
+
+/* Keep the injected frame snug in the hero zone */
+.top-hero .frame-wrap{
+  margin: 0 auto;
+}
+
+/* -----------------------------
+   Desktop / landscape tuning
+   ----------------------------- */
+@media (min-width: 800px){
+  /* Cap the hero so the bottom UI isn’t crushed */
+  .panel.game-shell{
+    grid-template-rows: minmax(170px, 34dvh) 1fr;
+  }
+
+  /* Allow hero area to crop if needed */
+  .top-hero{
+    overflow: hidden;
+  }
+
+  /* Let the ornate frame live within the capped hero height */
+  .top-hero .frame-wrap{
+    height: 100%;
+    max-height: 34dvh;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Show the full image inside the frame (no aggressive cropping) */
+  #sceneImage{
+    max-height: calc(34dvh - 32px); /* subtract a bit for frame padding */
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+}
+
+/* Super-wide / short screens (some laptops + browser toolbars) */
+@media (min-width: 1100px) and (max-height: 720px){
+  .panel.game-shell{
+    grid-template-rows: minmax(160px, 28dvh) 1fr;
+  }
+  .top-hero .frame-wrap{
+    max-height: 28dvh;
+  }
+  #sceneImage{
+    max-height: calc(28dvh - 32px);
+  }
+}
+
+/* Small phones (extra safety) */
+@media (max-width: 520px){
+  .panel.game-shell{
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+}
+
+  
 .panel.game-shell{
   display: grid;
   grid-template-rows: auto 1fr;   /* image then scroll zone */
