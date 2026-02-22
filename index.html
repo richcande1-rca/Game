@@ -61,11 +61,10 @@ body{
 /* Base (keeps phone portrait behavior happy) */
 .panel.game-shell{
   display: grid;
-  grid-template-rows: auto 1fr;   /* hero then scroll zone */
+  grid-template-rows: auto 1fr;   /* hero auto height */
   height: calc(100dvh - 36px);
   max-height: calc(100dvh - 36px);
   gap: 10px;
-  min-height: 0;
 }
 
 /* Top hero stays visible */
@@ -102,12 +101,13 @@ body{
   }
 
   /* Desktop MUST NOT be sticky or it overlaps narration */
-  .top-hero{
-    position: relative;   /* overrides sticky from base rule */
-    top: auto;
-    z-index: 1;
-    overflow: visible;
-    min-height: 0;
+  
+    .top-hero{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+      padding-bottom: 14px;   /* gives ornate frame room */
+}
   }
 
   /* Frame sized to hero area */
