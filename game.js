@@ -452,32 +452,20 @@ function narrateSceneBase() {
   return text;
 }
 
+/* ---------------------------
+ CHOICE LABELS (PURE — NO SIDE EFFECTS)
+---------------------------- */
 function prettyChoiceBase(intent) {
   if (intent.type === "move") {
-  STATE.roomId = intent.to;
-
-  addChron(`Turn ${STATE.turn}: Moved ${intent.dir.toUpperCase()} to ${WORLD.rooms[intent.to]?.name || intent.to}.`);
-
-  // ✅ Courtyard ghost scene — fire once on first entry
-  if (intent.to === "courtyard" && !hasFlag("courtyard_ghost_seen")) {
-    setFlag("courtyard_ghost_seen", true);
-
-    emitImageTrigger(
-      "Courtyard Apparition",
-      "As you step into the moonlit courtyard, an apparition forms near the cracked fountain—tall, pale, half-remembered. Fog coils around its feet like it belongs to the stone. The statues seem to watch."
-    );
-
-    addChron(`Turn ${STATE.turn}: Saw an apparition in the courtyard.`);
+    const toName = WORLD.rooms[intent.to]?.name || intent.to;
+    return `Go ${intent.dir.toUpperCase()} → ${toName}`;
   }
 
-  saveState();
-  render();
-  return;
-}
   if (intent.type === "take") {
     const nm = WORLD.items[intent.itemId]?.name || intent.itemId;
     return `Take the ${nm}.`;
   }
+
   if (intent.type === "examine") {
     const nm = WORLD.items[intent.itemId]?.name || intent.itemId;
     return `Examine the ${nm}.`;
@@ -726,7 +714,7 @@ function imageUrlForRoom(roomId) {
     .join(",");
 
   const stateSig = `f:${flags}|m:${miles}`;
- return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${encodeURIComponent(roomId)}&state=${encodeURIComponent(stateSig)}&t=${Date.now()}`;
+  return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${encodeURIComponent(roomId)}&state=${encodeURIComponent(stateSig)}&t=${Date.now()}`;
 }
 
 /* ---------------------------
@@ -782,23 +770,53 @@ function applyOverlayFromJsonText(jsonText) {
 function applyIntent(intent) {
   clearOverlay();
 
+  // Turn advances on every action
   STATE.turn += 1;
-  STATE.visited[STATE.roomId] = (STATE.visited[STATE.roomId] || 0) + 1;
 
-  const r = room();
+  // Helper: fire "first visit" milestone for the CURRENT roomId
+  function handleFirstVisitForCurrentRoom() {
+    const rNow = room();
+    // count visit
+    STATE.visited[STATE.roomId] = (STATE.visited[STATE.roomId] || 0) + 1;
 
-  if (r.firstVisitMilestone && !STATE.milestones[r.firstVisitMilestone]) {
-    STATE.milestones[r.firstVisitMilestone] = true;
-    emitImageTrigger(r.name, r.descSeed);
+    if (rNow.firstVisitMilestone && !STATE.milestones[rNow.firstVisitMilestone]) {
+      STATE.milestones[rNow.firstVisitMilestone] = true;
+      emitImageTrigger(rNow.name, rNow.descSeed);
+    }
   }
 
   if (intent.type === "move") {
+    const fromId = STATE.roomId;
+
+    // Move first (so "arrival" milestones/triggers are correct)
     STATE.roomId = intent.to;
+
     addChron(`Turn ${STATE.turn}: Moved ${intent.dir.toUpperCase()} to ${WORLD.rooms[intent.to]?.name || intent.to}.`);
+
+    // Arrival visit + arrival milestone image trigger
+    handleFirstVisitForCurrentRoom();
+
+    // ✅ Courtyard ghost scene — fire once on first entry (on arrival)
+    if (intent.to === "courtyard" && !hasFlag("courtyard_ghost_seen")) {
+      setFlag("courtyard_ghost_seen", true);
+
+      emitImageTrigger(
+        "Courtyard Apparition",
+        "As you step into the moonlit courtyard, an apparition forms near the cracked fountain—tall, pale, half-remembered. Fog coils around its feet like it belongs to the stone. The statues seem to watch."
+      );
+
+      addChron(`Turn ${STATE.turn}: Saw an apparition in the courtyard.`);
+    }
+
     saveState();
     render();
     return;
   }
+
+  // Non-move actions happen "in place"
+  handleFirstVisitForCurrentRoom();
+
+  const r = room();
 
   if (intent.type === "take") {
     const itemId = intent.itemId;
