@@ -124,12 +124,12 @@ body{
   }
 
   /* Make image actually fill the frame nicely */
-  #sceneImage{
-    width: 100%;
-    height: 100%;
-    max-height: none;
-    object-fit: contain;   /* change to 'cover' if you want cinematic crop */
-  }
+ #sceneImage{
+  width: 100%;
+  height: auto;        /* ✅ natural sizing */
+  max-height: 52dvh;   /* keeps cinematic scale without takeover */
+  object-fit: contain;
+}
 }
 
 /* Super-wide / short screens (some laptops + browser toolbars) */
