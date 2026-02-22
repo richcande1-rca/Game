@@ -133,6 +133,24 @@ body{
 /* Keep the injected frame snug in the top area */
 .top-hero .frame-wrap{ margin: 0 auto; }
 
+  /* --- Desktop: keep the ornate frame from becoming huge --- */
+@media (min-width: 820px){
+  .top-hero .frame-wrap{
+    max-width: 520px;     /* slightly narrower on desktop */
+    max-height: 300px;    /* ✅ caps vertical size so choices stay readable */
+    overflow: hidden;     /* hides any extra image height neatly */
+  }
+}
+
+/* Make sure the image can “fill” the capped frame cleanly */
+@media (min-width: 820px){
+  #sceneImage{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
 /* --- Victorian Frame for generated scene image --- */
 .frame-wrap{
   width: 100%;
