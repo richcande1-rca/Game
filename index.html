@@ -76,14 +76,37 @@ body{
 
 /* Bottom area is the only scroller */
 .bottom-ui{
-  min-height: 0;                 /* ✅ critical for grid + overflow */
-  overflow: auto;
+  min-height: 0;                 /* critical for grid + overflow */
+  overflow-y: scroll;            /* ✅ ALWAYS show vertical scrollbar */
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding-right: 6px;
 
-  /* optional: makes the bottom feel less “huge” on desktop */
+  padding-right: 10px;           /* a little room for the scrollbar */
   max-width: 740px;
   margin: 0 auto;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #6b0000 #050505;
+}
+
+/* Chrome / Edge / Safari */
+.bottom-ui::-webkit-scrollbar{
+  width: 12px;
+}
+
+.bottom-ui::-webkit-scrollbar-track{
+  background:#050505;
+}
+
+.bottom-ui::-webkit-scrollbar-thumb{
+  background: linear-gradient(to bottom, #3a0000, #6b0000);
+  border-radius: 8px;
+  border: 2px solid #050505;
+}
+
+.bottom-ui::-webkit-scrollbar-thumb:hover{
+  background:#8b0000;
 }
 
 /* Keep the injected frame snug in the hero zone */
