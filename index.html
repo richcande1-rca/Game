@@ -584,18 +584,32 @@ pre{
 
     el.addEventListener("scroll", onScroll, { passive: true });
 
-    // Also update when layout/content changes (choices change, drawer opens, images load, etc.)
     const ro = new ResizeObserver(update);
     ro.observe(el);
 
-    // One last update after the page settles
     requestAnimationFrame(update);
     setTimeout(update, 250);
     setTimeout(update, 800);
   }
 
   window.addEventListener("DOMContentLoaded", () => {
-    wireScrollHints(document.getElementById("bottomUI"));
+
+    const bottomUI = document.getElementById("bottomUI");
+    wireScrollHints(bottomUI);
+
+    /* ============================
+       NEW: Allow scrolling anywhere
+       inside the game panel
+    ============================ */
+
+    const shell = document.querySelector(".game-shell");
+
+    if (shell && bottomUI) {
+      shell.addEventListener("wheel", (e) => {
+        bottomUI.scrollTop += e.deltaY;
+      }, { passive: true });
+    }
+
   });
 })();
 </script>
