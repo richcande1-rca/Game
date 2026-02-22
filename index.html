@@ -26,7 +26,7 @@ body{
   font-family: ui-serif, Georgia, "Times New Roman", serif;
   line-height:1.45;
 
-  /* ✅ normal page scrolling (safe) */
+  /* normal page scrolling */
   overflow: auto;
 }
 
@@ -38,11 +38,8 @@ body{
   box-sizing: border-box;
 }
 
-/* Stack title + game (hide/show with display) */
-.screen-stack{
-  position: relative;
-}
-
+/* Stack title + game and hide/show screens */
+.screen-stack{ position: relative; }
 .screen{ display:none; }
 .screen.is-active{ display:block; }
 
@@ -58,10 +55,9 @@ body{
 /* --------------------------------
    GAME UI: fixed image + scrollable bottom
 ---------------------------------- */
-/* Base (keeps phone portrait behavior happy) */
 .panel.game-shell{
   display: grid;
-  grid-template-rows: auto 1fr;   /* hero auto height */
+  grid-template-rows: auto 1fr;   /* hero then scroll zone */
   height: calc(100dvh - 36px);
   max-height: calc(100dvh - 36px);
   gap: 10px;
@@ -72,114 +68,70 @@ body{
   position: sticky;
   top: 0;
   z-index: 5;
+  min-height: 0;
+  padding-bottom: 14px;  /* tiny breathing room so ornate frame never clips */
 }
 
 /* Bottom area is the only scroller */
 .bottom-ui{
   min-height: 0;                 /* critical for grid + overflow */
-  overflow-y: scroll;            /* ✅ ALWAYS show vertical scrollbar */
+  overflow-y: scroll;            /* ✅ ALWAYS show vertical scrollbar (even if Chrome overlays it) */
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 
-  padding-right: 10px;           /* a little room for the scrollbar */
+  padding-right: 10px;           /* room for scrollbar */
   max-width: 740px;
   margin: 0 auto;
 
-  /* Firefox */
+  /* Firefox scrollbar */
   scrollbar-width: thin;
   scrollbar-color: #6b0000 #050505;
+
+  /* subtle “there is more content” indicator (works even if Chrome auto-hides the bar) */
+  box-shadow: inset -8px 0 10px rgba(120,0,0,0.10);
+  position: relative;
 }
 
-/* Chrome / Edge / Safari */
-.bottom-ui::-webkit-scrollbar{
-  width: 12px;
+/* ===== Scroll fades (AAA-style, makes scroll obvious even when Chrome hides bars) ===== */
+.bottom-ui::before,
+.bottom-ui::after{
+  content:"";
+  position: sticky;              /* sticks inside the scrolling element */
+  left: 0;
+  right: 0;
+  height: 18px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  z-index: 20;
 }
 
-.bottom-ui::-webkit-scrollbar-track{
-  background:#050505;
+.bottom-ui::before{
+  top: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0));
 }
 
+.bottom-ui::after{
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0));
+}
+
+/* JS toggles these classes */
+.bottom-ui.can-scroll:not(.at-top)::before{ opacity: 1; }
+.bottom-ui.can-scroll:not(.at-bottom)::after{ opacity: 1; }
+
+/* Chrome / Edge / Safari scrollbar styling */
+.bottom-ui::-webkit-scrollbar{ width: 16px; }
+.bottom-ui::-webkit-scrollbar-track{ background:#050505; }
 .bottom-ui::-webkit-scrollbar-thumb{
-  background: linear-gradient(to bottom, #3a0000, #6b0000);
-  border-radius: 8px;
+  background: linear-gradient(to bottom, #3a0000, #8b0000);
+  border-radius: 10px;
   border: 2px solid #050505;
 }
+.bottom-ui::-webkit-scrollbar-thumb:hover{ background:#a00000; }
 
-.bottom-ui::-webkit-scrollbar-thumb:hover{
-  background:#8b0000;
-}
-
-/* Keep the injected frame snug in the hero zone */
-.top-hero .frame-wrap{
-  height: auto;    /* ✅ frame sizes to image again */
-/* -----------------------------
-   Desktop / landscape tuning
-   ----------------------------- */
-@media (min-width: 800px){
-
-  /* Give hero more space so image feels cinematic */
-  .panel.game-shell{
-   grid-template-rows: auto 1fr;
-
-  }
-
-  /* Desktop MUST NOT be sticky or it overlaps narration */
-  
-    .top-hero{
-  position: sticky;
-  top: 0;
-  z-index: 5;
-      padding-bottom: 14px;   /* gives ornate frame room */
-}
-  }
-
-  /* Frame sized to hero area */
-  .top-hero .frame-wrap{
-    height: 100%;
-    max-height: 58dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;       /* remove large bottom spacing */
-    padding: 12px;        /* slightly thinner frame edge */
-    max-width: 620px;
-  }
-
-  /* Make image actually fill the frame nicely */
- #sceneImage{
-  width: 100%;
-  height: auto;        /* ✅ natural sizing */
-  max-height: 52dvh;   /* keeps cinematic scale without takeover */
-  object-fit: contain;
-}
-}
-
-/* Super-wide / short screens (some laptops + browser toolbars) */
-@media (min-width: 1100px) and (max-height: 720px){
-  .panel.game-shell{
-    grid-template-rows: minmax(240px, 48dvh) 1fr;
-  }
-  .top-hero .frame-wrap{
-    max-height: 48dvh;
-  }
-  #sceneImage{
-    max-height: calc(48dvh - 32px);
-  }
-}
-
-/* Small phones (extra safety) */
-@media (max-width: 520px){
-  .panel{ padding: 12px; }
-  .wrap{ padding: 12px; }
-
-  .panel.game-shell{
-    height: calc(100dvh - 24px);
-    max-height: calc(100dvh - 24px);
-  }
-
-  .vol input[type="range"]{ width: 120px; }
-  .scene{ font-size: 17px; }
-}
+/* Keep the injected frame snug in the top area */
+.top-hero .frame-wrap{ margin: 0 auto; }
 
 /* --- Victorian Frame for generated scene image --- */
 .frame-wrap{
@@ -333,9 +285,7 @@ button.choice:focus-visible{
   border-color: rgba(107,0,0,0.55);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
 }
-.tinybtn.music:hover{
-  border-color: rgba(140,0,0,0.75);
-}
+.tinybtn.music:hover{ border-color: rgba(140,0,0,0.75); }
 
 .kbd{
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -469,6 +419,18 @@ pre{
   color:#b8b8b8;
   font-size: 12px;
 }
+
+@media (max-width: 520px){
+  .vol input[type="range"]{ width: 120px; }
+  .scene{ font-size: 17px; }
+  .panel{ padding: 12px; }
+  .wrap{ padding: 12px; }
+
+  .panel.game-shell{
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+}
 </style>
 </head>
 
@@ -510,7 +472,7 @@ pre{
         <div id="sceneImageMount" class="image-zone top-hero"></div>
 
         <!-- BOTTOM: scrollable UI zone -->
-        <div class="bottom-ui">
+        <div class="bottom-ui" id="bottomUI">
 
           <noscript>
             <div class="meta" style="margin-top:10px;">
@@ -568,5 +530,47 @@ pre{
 </div>
 
 <script src="game.js" defer></script>
+
+<!-- Scroll indicator controller (safe, tiny, does not touch your game logic) -->
+<script>
+(() => {
+  function wireScrollHints(el){
+    if (!el) return;
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+
+      const canScroll = el.scrollHeight > el.clientHeight + 1;
+      const atTop = el.scrollTop <= 1;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+
+      el.classList.toggle("can-scroll", canScroll);
+      el.classList.toggle("at-top", atTop);
+      el.classList.toggle("at-bottom", atBottom);
+    };
+
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(update);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+
+    // Also update when layout/content changes (choices change, drawer opens, images load, etc.)
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    // One last update after the page settles
+    requestAnimationFrame(update);
+    setTimeout(update, 250);
+    setTimeout(update, 800);
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    wireScrollHints(document.getElementById("bottomUI"));
+  });
+})();
+</script>
 </body>
 </html>
