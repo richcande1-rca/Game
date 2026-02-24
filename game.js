@@ -726,8 +726,10 @@ function imageUrlForRoom(roomId) {
     .sort()
     .join(",");
 
-  const stateSig = `f:${flags}|m:${miles}`;
-  return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${encodeURIComponent(roomId)}&state=${encodeURIComponent(stateSig)}&t=${Date.now()}`;
+  const IMAGE_PROMPT_VERSION = 3; // bump this whenever prompt logic changes
+
+const stateSig = `f:${flags}|m:${miles}`;
+return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${encodeURIComponent(roomId)}&state=${encodeURIComponent(stateSig)}&v=${IMAGE_PROMPT_VERSION}&t=${Date.now()}`;
 }
 
 /* ---------------------------
