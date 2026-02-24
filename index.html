@@ -146,16 +146,16 @@ body{
 ========================================== */
 @media (min-width: 820px){
   .top-hero .frame-wrap{
-    max-width: 520px;          /* slightly narrower on desktop */
+    max-width: 640px;          /* was 520 */
     margin: 6px auto 10px auto;
-    overflow: visible;         /* ✅ do NOT clip the frame */
+    overflow: visible;
   }
 
   #sceneImage{
     width: 100%;
-    height: auto;              /* ✅ preserve proportions */
-    max-height: 300px;         /* ✅ main knob: try 260–340 */
-    object-fit: contain;       /* safe if max-height kicks in */
+    height: auto;
+    max-height: min(46dvh, 440px);   /* ✅ was 300px */
+    object-fit: contain;
   }
 }
 
