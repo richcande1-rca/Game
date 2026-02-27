@@ -726,8 +726,8 @@ const miles = Object.keys(STATE.milestones)
 .sort()
 .join(",");
 
-  const IMAGE_PROMPT_VERSION = 31; // bump this whenever prompt logic changes
-  const IMAGE_PROMPT_VERSION = 32; // bump this whenever prompt logic changes
+  const IMAGE_PROMPT_VERSION = 33; // bump this whenever prompt logic changes
+
 
 const stateSig = `f:${flags}|m:${miles}`;
 return `${CF_IMAGE_BASE}?room=${encodeURIComponent(roomId)}&seed=${encodeURIComponent(roomId)}&state=${encodeURIComponent(stateSig)}&v=${IMAGE_PROMPT_VERSION}&t=${Date.now()}`;
