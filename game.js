@@ -847,6 +847,23 @@ playCutscene(
 );
 }
 
+// ✅ Kitchen butcher appears AFTER taking the matchbook
+if (STATE.roomId === "kitchen" && itemId === "matchbook" && !hasFlag("butcher_seen")) {
+setFlag("butcher_seen", true);
+
+emitImageTrigger(
+"Butcher Crowe",
+"The matchbook shifts warm in your hand. Somewhere in the kitchen, a metal hook creaks once. When you look up, the room is no longer empty. A broad figure stands near the preparation block in a dark butcher's apron, motionless beneath the cold hearth, as if he had always been waiting there."
+);
+
+addChron(`Turn ${STATE.turn}: Butcher Crowe appeared after taking the matchbook.`);
+
+playCutscene(
+"The matchbook shifts warm in your hand.\n\nA hook creaks somewhere in the dark.\n\nWhen you look up, the kitchen is no longer empty.\n\nA broad man stands near the preparation block beneath the cold hearth, wrapped in a dark butcher's apron. His posture is calm. Deliberate. His face is pale as old wax, unreadable in the gloom.\n\nHe does not move toward you.\n\nHe simply watches—as if you have interrupted a task he expected to finish later.",
+"Do not let him see you flinch…"
+);
+}
+
 } else {
 addChron(`Turn ${STATE.turn}: Tried to take ${itemId}, but it wasn't there.`);
 }
