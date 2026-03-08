@@ -325,7 +325,7 @@ return !!game && game.classList.contains("is-active");
 }
 
 function safeScrollToTop(){
-const sc = document.getElementById("gameScroll");
+const sc = document.getElementById("bottomUI");
 if (!sc) return;
 // top of content (keeps scene visible)
 sc.scrollTop = 0;
