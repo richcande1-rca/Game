@@ -726,7 +726,7 @@ const miles = Object.keys(STATE.milestones)
 .sort()
 .join(",");
 
-const IMAGE_PROMPT_VERSION = 35; // bump this whenever prompt logic changes
+const IMAGE_PROMPT_VERSION = 36; // bump this whenever prompt logic changes
 
 
 const stateSig = `f:${flags}|m:${miles}`;
