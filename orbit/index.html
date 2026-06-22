@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Orbit</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="game" aria-label="Orbit game canvas"></canvas>
+
+  <main class="hud" aria-live="polite">
+    <div class="title">ORBIT</div>
+    <div class="stats">
+      <span>Score <strong id="score">0</strong></span>
+      <span>Lives <strong id="lives">3</strong></span>
+      <span>Run <strong id="level">1</strong></span>
+    </div>
+    <div id="message" class="message">Tap to begin</div>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
