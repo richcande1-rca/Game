@@ -1,0 +1,313 @@
+// src/index.js
+// Gothic Chronicle Worker – clean routing version (FINAL w/ versioned cache bust)
+
+const ALLOWED_ORIGINS = new Set([
+  'https://richcande1-rca.github.io',
+]);
+
+function corsHeaders(origin) {
+  const ok = origin && ALLOWED_ORIGINS.has(origin);
+  return {
+    'Access-Control-Allow-Origin': ok ? origin : 'null',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
+  };
+}
+
+function withCors(response, origin) {
+  const h = new Headers(response.headers);
+  const cors = corsHeaders(origin);
+  for (const [k, v] of Object.entries(cors)) h.set(k, v);
+  return new Response(response.body, { status: response.status, headers: h });
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data, null, 2), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  });
+}
+
+function clampUInt32(n) {
+  return (Number(n) >>> 0);
+}
+
+async function sha256Hex(text) {
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)]
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function seedFromText(text) {
+  const hex = await sha256Hex(text);
+  return clampUInt32(parseInt(hex.slice(0, 8), 16));
+}
+
+// Parse state like: f:courtyard_ghost_seen,candle_lit|m:m_courtyard_first
+function parseState(stateStr) {
+  const out = { flags: new Set(), miles: new Set() };
+  if (!stateStr) return out;
+
+  const parts = stateStr.split('|');
+  for (const p of parts) {
+    if (p.startsWith('f:')) {
+      p.slice(2).split(',').map(s => s.trim()).filter(Boolean).forEach(s => out.flags.add(s));
+    } else if (p.startsWith('m:')) {
+      p.slice(2).split(',').map(s => s.trim()).filter(Boolean).forEach(s => out.miles.add(s));
+    }
+  }
+  return out;
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const origin = request.headers.get('Origin');
+    const method = request.method.toUpperCase();
+
+    // =====================
+    // CORS PREFLIGHT
+    // =====================
+    if (method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
+
+    // =====================
+    // ROOT
+    // =====================
+    if (method === 'GET' && url.pathname === '/') {
+      return withCors(
+        new Response('Hello World!', { headers: { 'Content-Type': 'text/plain' } }),
+        origin
+      );
+    }
+
+    // =====================
+    // HEALTH CHECK
+    // =====================
+    if (method === 'GET' && url.pathname === '/health') {
+      return withCors(
+        json({ ok: true, service: 'gothic-chronicle-images', ts: Date.now() }),
+        origin
+      );
+    }
+
+    // =====================
+    // IMAGE REDIRECT
+    // GET /image?room=&state=&seed=&v=&t=
+    // =====================
+    if (method === 'GET' && url.pathname === '/image') {
+      const room = (url.searchParams.get('room') || '').trim();
+      const state = (url.searchParams.get('state') || '').trim();
+      const seedParam = (url.searchParams.get('seed') || room).trim();
+      const v = (url.searchParams.get('v') || '1').trim(); // prompt/cache version
+
+      if (!room) {
+        return withCors(json({ ok: false, error: 'Missing ?room=' }, 400), origin);
+      }
+
+      // IMPORTANT: include seed + v in payload so imageId changes when prompts change
+      const payload = { room, state, seed: seedParam, v, w: 768, h: 768 };
+      const imageId = 'img_' + await sha256Hex(JSON.stringify(payload));
+
+      const redirectUrl =
+        `${url.origin}/api/image/${imageId}.jpg` +
+        `?room=${encodeURIComponent(room)}` +
+        `&state=${encodeURIComponent(state)}` +
+        `&seed=${encodeURIComponent(seedParam)}` +
+        `&v=${encodeURIComponent(v)}` +
+        (url.searchParams.get('debug') === '1' ? `&debug=1` : '');
+
+      return withCors(
+        new Response(null, { status: 302, headers: { Location: redirectUrl } }),
+        origin
+      );
+    }
+
+    // =====================
+    // API GENERATE (JSON helper)
+    // =====================
+    if (method === 'POST' && url.pathname === '/api/generate') {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return withCors(json({ ok: false, error: 'Invalid JSON' }, 400), origin);
+      }
+
+      if (!body?.prompt) {
+        return withCors(json({ ok: false, error: 'Missing prompt' }, 400), origin);
+      }
+
+      const payload = {
+        prompt: body.prompt,
+        seed: body.seed ?? 0,
+        w: body.w ?? 768,
+        h: body.h ?? 768
+      };
+
+      const imageId = 'img_' + await sha256Hex(JSON.stringify(payload));
+
+      return withCors(
+        json({ ok: true, imageId, url: `${url.origin}/api/image/${imageId}.jpg` }),
+        origin
+      );
+    }
+
+    // =====================
+    // REAL IMAGE GENERATION (DETERMINISTIC + CACHED)
+    // =====================
+    if (method === 'GET' && url.pathname.startsWith('/api/image/')) {
+      try {
+        const room = (url.searchParams.get('room') || 'gothic estate').trim();
+        const state = (url.searchParams.get('state') || '').trim();
+        const seedParam = (url.searchParams.get('seed') || room).trim();
+        const v = (url.searchParams.get('v') || '1').trim(); // keep in URL for cache identity
+
+        // Cache key = full request URL (includes room/state/seed/v + /api/image/<id>.jpg)
+        const cacheKey = new Request(url.toString(), { method: 'GET' });
+        const cache = caches.default;
+
+        // 1) Try cache first
+        const cached = await cache.match(cacheKey);
+        if (cached) return withCors(cached, origin);
+
+        const st = parseState(state);
+
+        const roomKey = room.toLowerCase();
+        const isCourtyard = roomKey.includes('courtyard');
+
+        // ===== PROMPT BUILD =====
+        const sceneLine = isCourtyard
+          ? 'Scene: a moonlit gothic stone courtyard with a central cracked stone fountain clearly visible at center frame.'
+          : `Scene: ${room}.`;
+
+        let prompt =
+          'Ultra realistic cinematic gothic horror. ' +
+          `${sceneLine} ` +
+          'Fog, moonlight, ancient stone, dramatic shadows. ' +
+          'High detail, cinematic lighting, moody atmosphere. ' +
+          'No text, no watermark, no modern objects. ';
+
+        // Courtyard anchor
+        if (isCourtyard) {
+          prompt +=
+            ' The central cracked stone fountain MUST be clearly visible and centered; ' +
+            'wet cobblestones, ivy-covered walls, weathered statues, wrought-iron gate in distance. ' +
+            'Keep consistent layout across renders.';
+        }
+
+        // Global candle lighting modifier
+        if (st.flags.has('candle_lit')) {
+          prompt +=
+            ' Add warm candlelight and subtle amber highlights throughout the scene, ' +
+            ' with deeper shadow contrast, gentle practical-light glow, ' +
+            ' and richer illuminated details against the surrounding darkness. ';
+        }
+
+        // Ghost positioning (SAFE ZONE — visible, not cropped, not centered)
+        if (isCourtyard && st.flags.has('courtyard_ghost_seen')) {
+          prompt +=
+            ' A tall mourning ghost is clearly present as a primary subject in the scene. ' +
+            ' She stands beside the central cracked fountain, slightly off-center, fully visible in frame. ' +
+            ' Her form is a translucent human silhouette, surrounded by an ethereal mist.' +
+            ' The figure is pale and spectral, with moonlight passing through her body revealing the courtyard behind her. ' +
+            ' Her outline is stable and clearly humanoid, though facial features remain indistinct and shadowed. ' +
+            ' Thin wisps of mist trail from the edges of her form as if her body is slowly fading into the night air. ' +
+            ' She stands quietly beside the fountain as if remembering something long lost. ' +
+            ' The apparition must remain separate from the fountain and surrounding fog. ' +
+            ' Full figure visible in frame, not cropped and not obscured. ';
+
+          if (st.flags.has('candle_lit')) {
+            prompt +=
+              ' Warm candlelight softly illuminates parts of the apparition, creating subtle amber highlights along the edges of her fading form while moonlight still passes through her translucent body. ';
+          }
+        }
+
+        // Butcher positioning (SAFE ZONE — visible, not cropped, not centered)
+        if (roomKey.includes('kitchen') && st.flags.has('butcher_seen')) {
+          prompt +=
+            ' A sinister gothic butcher is clearly present ' +
+            ' as a primary subject in the scene. ' +
+            ' He stands slightly RIGHT OF CENTER near a wooden preparation block ' +
+            ' beneath the cold hearth, fully visible in frame, ' +
+            ' not cropped and not obscured. ' +
+            ' He is tall and broad-shouldered, wearing a dark butcher apron, ' +
+            ' with pale wax-like skin and an unreadable expression. ' +
+            ' His posture is calm, deliberate, and unsettling. ' +
+            ' One hand rests near a heavy cleaver or carving blade, ' +
+            ' but he is not attacking and not in an action pose. ' +
+            ' Hanging hooks, old iron tools, and shadowed kitchen details remain visible around him. ' +
+            ' The atmosphere should feel tense, cinematic, and deeply uncanny, ' +
+            ' as if he had been standing there silently for some time. ' +
+            ' No cartoon gore, no exaggerated slasher styling. ';
+        }
+
+        // 2) Deterministic seed
+        // Courtyard: stable composition across state changes
+        // Other rooms: state influences composition (optional)
+        let seedKey = `${room}::${seedParam}`;
+
+        if (isCourtyard && st.flags.has('courtyard_ghost_seen')) {
+          // new deterministic camera for the ghost moment
+          seedKey = `${room}::${seedParam}::ghost`;
+        } else if (roomKey.includes('kitchen') && st.flags.has('butcher_seen')) {
+          // new deterministic camera for the butcher moment
+          seedKey = `${room}::${seedParam}::butcher`;
+        } else if (!isCourtyard) {
+          seedKey = `${room}::${state}::${seedParam}`;
+        }
+
+        const seed = await seedFromText(seedKey);
+
+        // Debug mode
+        if (url.searchParams.get('debug') === '1') {
+          return withCors(
+            json({ ok: true, room, state, seedParam, v, isCourtyard, seedKey, seed, prompt }),
+            origin
+          );
+        }
+
+        // 3) Generate
+        const result = await env.AI.run('@cf/leonardo/phoenix-1.0', {
+          prompt,
+          seed
+        });
+
+        const imageData = result?.image || result;
+
+        const response = new Response(imageData, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/jpeg',
+            'Cache-Control': 'public, max-age=31536000, immutable',
+          }
+        });
+
+        // 4) Store in edge cache (async)
+        ctx.waitUntil(cache.put(cacheKey, response.clone()));
+
+        return withCors(response, origin);
+      } catch (err) {
+        return withCors(
+          json({
+            ok: false,
+            error: 'Image generation failed',
+            detail: String(err?.message || err),
+            hasAI: !!env.AI
+          }, 500),
+          origin
+        );
+      }
+    }
+
+    // =====================
+    // FALLBACK
+    // =====================
+    return withCors(json({ ok: false, error: 'Not found' }, 404), origin);
+  }
+};
